@@ -171,7 +171,7 @@ const Search = () => {
           ) : searchQuery ? (
             <Box p={4} textAlign="center">
               <Text fontSize="sm" color="gray.600">
-                No products found for "{searchQuery}"
+                {`No products found for "${searchQuery}"`}
               </Text>
             </Box>
           ) : null}

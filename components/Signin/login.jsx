@@ -245,7 +245,7 @@ const Login = () => {
                   {/* Register Link */}
                   <Box textAlign="center" pt={2}>
                     <Text color="white" fontSize="md" fontWeight="500">
-                      Don't have an account?{' '}
+                      {"Don't have an account? " }
                       <Link href="/signup" style={{ textDecoration: "none" }}>
                         <Text
                           as="span"

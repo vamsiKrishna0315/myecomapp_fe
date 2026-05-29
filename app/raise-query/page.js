@@ -145,7 +145,7 @@ export default function RaiseQueryPage() {
               Raise a Query
             </Text>
             <Text fontSize="lg" opacity={0.9}>
-              We're here to help! Let us know what's on your mind.
+              {"We're here to help! Let us know what's on your mind."}
             </Text>
           </Box>
 
