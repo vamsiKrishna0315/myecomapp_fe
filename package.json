@@ -1,0 +1,37 @@
+{
+  "name": "licious-clone-nextjs",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "test:seo": "node --experimental-default-type=module tests/seo.test.js"
+  },
+  "dependencies": {
+    "@chakra-ui/icons": "^2.0.13",
+    "@chakra-ui/react": "^2.4.3",
+    "@chakra-ui/skip-nav": "^2.0.12",
+    "@emotion/react": "^11.10.5",
+    "@emotion/styled": "^11.10.5",
+    "axios": "^1.2.1",
+    "framer-motion": "^7.9.1",
+    "next": "^14.0.0",
+    "razorpay": "^2.9.6",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-icons": "^4.7.1",
+    "react-redux": "^8.0.5",
+    "react-slick": "^0.29.0",
+    "redux": "^4.2.1",
+    "redux-thunk": "^2.4.2",
+    "slick-carousel": "^1.8.1",
+    "swiper": "^8.4.5"
+  },
+  "devDependencies": {
+    "@types/node": "25.5.0",
+    "eslint": "^8.54.0",
+    "eslint-config-next": "^14.0.0"
+  }
+}

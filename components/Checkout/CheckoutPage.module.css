@@ -1,0 +1,422 @@
+.page {
+  display: grid;
+  gap: 24px;
+}
+
+.layout {
+  display: grid;
+  gap: 24px;
+  grid-template-columns: minmax(0, 1.85fr) minmax(320px, 1fr);
+  align-items: start;
+}
+
+.leftColumn {
+  display: grid;
+  gap: 24px;
+}
+
+.rightColumn {
+  position: sticky;
+  top: 112px;
+}
+
+.card {
+  border: 1px solid #e5e7eb;
+  border-radius: 20px;
+  background: #ffffff;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+  padding: 24px;
+}
+
+.sectionTitle {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 20px;
+}
+
+.stack {
+  display: grid;
+  gap: 16px;
+}
+
+.cartItem {
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: center;
+  border: 1px solid #f1f5f9;
+  border-radius: 18px;
+  padding: 16px;
+  background: #fff;
+}
+
+.cartImageWrap {
+  position: relative;
+  width: 88px;
+  height: 88px;
+  overflow: hidden;
+  border-radius: 16px;
+  background: #f8fafc;
+}
+
+.cartImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.cartName {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 6px;
+}
+
+.cartMeta {
+  display: grid;
+  gap: 4px;
+  color: #64748b;
+  font-size: 0.925rem;
+}
+
+.price {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #d11243;
+}
+
+.ghostButton {
+  border: 1px solid #fecdd3;
+  color: #d11243;
+  background: #fff1f2;
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.ghostButton:hover {
+  background: #ffe4e6;
+}
+
+.slotGrid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.selectCard {
+  width: 100%;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 16px;
+  background: #fff;
+  text-align: left;
+  transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.selectCard:hover {
+  border-color: #fda4af;
+  box-shadow: 0 10px 24px rgba(225, 29, 72, 0.08);
+}
+
+.disabledSlot,
+.disabledSlot:hover {
+  opacity: 0.45;
+  cursor: not-allowed;
+  border-color: #e5e7eb;
+  background: #f8fafc;
+  box-shadow: none;
+}
+
+.selected {
+  border-color: #d11243;
+  background: #fff5f7;
+  box-shadow: 0 12px 28px rgba(209, 18, 67, 0.12);
+}
+
+.selectCardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.radioWrap {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.radio {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  border: 2px solid #cbd5e1;
+  margin-top: 2px;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.selected .radio {
+  border-color: #d11243;
+}
+
+.selected .radio::after {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  border-radius: 999px;
+  background: #d11243;
+}
+
+.addressType {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #d11243;
+  margin-bottom: 6px;
+}
+
+.badge {
+  border-radius: 999px;
+  background: #ffe4e6;
+  color: #be123c;
+  padding: 2px 10px;
+  font-size: 0.75rem;
+}
+
+.muted {
+  color: #64748b;
+  font-size: 0.95rem;
+  line-height: 1.55;
+}
+
+.linkButton {
+  border: 0;
+  background: transparent;
+  color: #d11243;
+  font-weight: 700;
+  padding: 0;
+}
+
+.toggleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border: 1px solid #f1f5f9;
+  border-radius: 16px;
+  background: #fafafa;
+  padding: 14px 16px;
+}
+
+.specialInstructionsHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.instructionsCounter {
+  border-radius: 999px;
+  background: #fff1f2;
+  color: #be123c;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 6px 10px;
+  white-space: nowrap;
+}
+
+.instructionsField {
+  display: grid;
+  gap: 10px;
+}
+
+.instructionsLabel {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.instructionsTextarea {
+  width: 100%;
+  min-height: 130px;
+  border: 1px solid #dbe1ea;
+  border-radius: 16px;
+  padding: 14px 16px;
+  color: #111827;
+  background: #fff;
+  resize: vertical;
+  font: inherit;
+  line-height: 1.55;
+}
+
+.instructionsTextarea:focus {
+  outline: 2px solid rgba(209, 18, 67, 0.14);
+  border-color: #d11243;
+}
+
+.toggle {
+  position: relative;
+  width: 46px;
+  height: 28px;
+  border: 0;
+  border-radius: 999px;
+  background: #cbd5e1;
+  transition: background-color 0.2s ease;
+}
+
+.toggleActive {
+  background: #d11243;
+}
+
+.toggleThumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: #fff;
+  transition: transform 0.2s ease;
+}
+
+.toggleActive .toggleThumb {
+  transform: translateX(18px);
+}
+
+.actionsRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.summaryRows {
+  display: grid;
+  gap: 12px;
+}
+
+.summaryRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  color: #475569;
+}
+
+.summaryTotal {
+  border-top: 1px solid #e5e7eb;
+  padding-top: 14px;
+  margin-top: 4px;
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #111827;
+}
+
+.couponRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+}
+
+.input {
+  width: 100%;
+  border: 1px solid #dbe1ea;
+  border-radius: 14px;
+  padding: 12px 14px;
+  color: #111827;
+  background: #fff;
+}
+
+.primaryButton {
+  border: 0;
+  border-radius: 14px;
+  background: #d11243;
+  color: #fff;
+  font-weight: 700;
+  padding: 12px 18px;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.primaryButton:hover {
+  background: #b80f3a;
+}
+
+.placeOrder {
+  width: 100%;
+  border: 0;
+  border-radius: 16px;
+  background: #d11243;
+  color: #fff;
+  font-weight: 800;
+  font-size: 1rem;
+  padding: 16px 18px;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.placeOrder:disabled {
+  cursor: not-allowed;
+  background: #fda4af;
+}
+
+.buttonMeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.buttonHint {
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.emptyState {
+  border: 1px dashed #cbd5e1;
+  border-radius: 16px;
+  padding: 20px;
+  background: #f8fafc;
+  color: #64748b;
+}
+
+@media (max-width: 1023px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .rightColumn {
+    position: static;
+    top: auto;
+  }
+}
+
+@media (max-width: 767px) {
+  .card {
+    padding: 18px;
+    border-radius: 18px;
+  }
+
+  .cartItem {
+    grid-template-columns: 72px minmax(0, 1fr);
+  }
+
+  .slotGrid,
+  .couponRow {
+    grid-template-columns: 1fr;
+  }
+
+  .actionsRow,
+  .toggleRow,
+  .buttonMeta,
+  .specialInstructionsHeader {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
