@@ -1,0 +1,257 @@
+.shell {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 20px;
+  overflow-y: auto;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  background:
+    radial-gradient(circle at top, rgba(209, 18, 67, 0.12), transparent 38%),
+    linear-gradient(180deg, #fffaf7 0%, #fff3ef 55%, #ffffff 100%);
+  color: #2f2a27;
+}
+
+.card {
+  width: min(920px, 100%);
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  gap: 28px;
+  align-items: center;
+  padding: 40px;
+  border: 1px solid rgba(209, 18, 67, 0.12);
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 24px 80px rgba(79, 38, 28, 0.12);
+  backdrop-filter: blur(10px);
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(209, 18, 67, 0.08);
+  color: #d11243;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.eyebrowDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #d11243;
+  box-shadow: 0 0 0 6px rgba(209, 18, 67, 0.12);
+}
+
+.title {
+  margin: 18px 0 12px;
+  font-size: clamp(2.4rem, 5vw, 4.2rem);
+  line-height: 0.98;
+  letter-spacing: -0.05em;
+  color: #201815;
+}
+
+.title span {
+  color: #d11243;
+}
+
+.description {
+  margin: 0;
+  max-width: 58ch;
+  font-size: 1.03rem;
+  line-height: 1.7;
+  color: #6c5d53;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.primaryAction,
+.secondaryAction {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 18px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: transform 120ms ease, box-shadow 120ms ease, background-color 120ms ease;
+}
+
+.primaryAction {
+  border: 1px solid #d11243;
+  color: #ffffff;
+  background: linear-gradient(135deg, #d11243 0%, #b30d36 100%);
+  box-shadow: 0 14px 28px rgba(209, 18, 67, 0.24);
+}
+
+.secondaryAction {
+  border: 1px solid #ead9cf;
+  color: #403833;
+  background: #fff;
+}
+
+.primaryAction:hover,
+.secondaryAction:hover {
+  transform: translateY(-1px);
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.metaItem {
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: #fcf8f4;
+  border: 1px solid #ead9cf;
+  color: #6c5d53;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.illustration {
+  position: relative;
+  min-height: 340px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.orb,
+.ring,
+.panel {
+  position: absolute;
+  border-radius: 999px;
+}
+
+.orb {
+  width: 220px;
+  height: 220px;
+  background: radial-gradient(circle at 30% 30%, #ff8ca2 0%, #d11243 55%, #8e0d2c 100%);
+  box-shadow: 0 28px 80px rgba(209, 18, 67, 0.28);
+}
+
+.ring {
+  width: 300px;
+  height: 300px;
+  border: 1px solid rgba(209, 18, 67, 0.14);
+  animation: pulse 3.6s ease-in-out infinite;
+}
+
+.panel {
+  width: 250px;
+  min-height: 160px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(209, 18, 67, 0.12);
+  box-shadow: 0 24px 50px rgba(60, 42, 34, 0.12);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 10px;
+  padding: 24px;
+  backdrop-filter: blur(8px);
+}
+
+.panelLabel {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #9a8678;
+}
+
+.panelValue {
+  font-size: 2.5rem;
+  font-weight: 800;
+  line-height: 1;
+  color: #d11243;
+}
+
+.panelText {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #6c5d53;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    transform: scale(0.96);
+    opacity: 0.75;
+  }
+  50% {
+    transform: scale(1.03);
+    opacity: 1;
+  }
+}
+
+@media (max-width: 860px) {
+  .card {
+    grid-template-columns: 1fr;
+    padding: 28px;
+  }
+
+  .illustration {
+    min-height: 260px;
+    order: -1;
+  }
+}
+
+@media (max-width: 640px) {
+  .shell {
+    padding: 18px;
+  }
+
+  .card {
+    padding: 22px;
+    border-radius: 22px;
+  }
+
+  .actions {
+    flex-direction: column;
+  }
+
+  .primaryAction,
+  .secondaryAction {
+    width: 100%;
+  }
+
+  .illustration {
+    min-height: 220px;
+  }
+
+  .orb {
+    width: 170px;
+    height: 170px;
+  }
+
+  .ring {
+    width: 230px;
+    height: 230px;
+  }
+
+  .panel {
+    width: 200px;
+    min-height: 140px;
+  }
+}

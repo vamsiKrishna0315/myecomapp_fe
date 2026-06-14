@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { Input, Box, Text, Image, Spinner, VStack } from "@chakra-ui/react";
 import { useRouter } from "next/navigation";
+import { buildProductRoutePath } from "../../utils/seo";
 import "./Search.css";
 
 const Search = () => {
@@ -85,8 +86,8 @@ const Search = () => {
     return () => clearTimeout(debounceTimer);
   }, [searchQuery, BASE_URL, API_TYPE]);
 
-  const handleProductClick = (productId) => {
-    router.push(`/product/${productId}`);
+  const handleProductClick = (product) => {
+    router.push(buildProductRoutePath(product));
     setShowResults(false);
     setSearchQuery("");
   };
@@ -145,7 +146,7 @@ const Search = () => {
                   cursor="pointer"
                   _hover={{ bg: "#f7fafc" }}
                   borderBottom="1px solid #e2e8f0"
-                  onClick={() => handleProductClick(product.id)}
+                  onClick={() => handleProductClick(product)}
                 >
                   <Image
                     src={product.primary_image_url || getAssetUrl(product.primary_image)}

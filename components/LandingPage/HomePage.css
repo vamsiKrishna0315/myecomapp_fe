@@ -243,6 +243,48 @@ hr{
   border-radius: 5px;
   cursor: pointer;
 }
+
+.product-slider-shell {
+  padding: 0 28px;
+}
+
+.product-slider-shell .slick-list {
+  margin: 0 -10px;
+}
+
+.product-slider-shell .slick-slide > div {
+  padding: 0 10px;
+}
+
+.product-slider-shell .product-slider-card {
+  height: 100%;
+}
+
+.product-slider-shell .homepage-slider-arrow {
+  z-index: 2;
+}
+
+.product-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.product-card-image {
+  height: 220px;
+  object-fit: cover;
+}
+
+.product-card-content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}
+
+.product-card-actions {
+  margin-top: auto;
+}
+
 .best_seller_item_detail{
   padding: 15px 15px 0;
   color: #4a4a4a;

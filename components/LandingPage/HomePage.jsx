@@ -36,6 +36,7 @@ import { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import "./HomePage.css";
 import { useSiteData } from "../Context/SiteDataContext";
+import { buildProductRoutePath, getCategorySlug } from "../../utils/seo";
 import { useDispatch } from "react-redux";
 import { addProductToCart } from "../../redux/ProductReducer/action";
 import React from "react";
@@ -125,7 +126,7 @@ function SmapleNextArrow(props) {
   const { className, style, onClick } = props;
   return (
     <div
-      className={className}
+      className={`${className || ""} homepage-slider-arrow homepage-slider-arrow-next`}
       style={{ ...style, display: "block", color: "black", right: "-8px" }}
       onClick={onClick}
     >
@@ -139,7 +140,7 @@ function SmaplePrevArrow(props) {
   const { className, style, onClick } = props;
   return (
     <div
-      className={className}
+      className={`${className || ""} homepage-slider-arrow homepage-slider-arrow-prev`}
       style={{ ...style, display: "block", color: "black" }}
       onClick={onClick}
     >
@@ -621,6 +622,11 @@ const HomePage = ({ initialSiteData = null }) => {
     ],
   };
 
+  const bestSellerSettings = {
+    ...settings,
+    className: "best-seller-slider-track",
+  };
+
   const whyUsSettings = {
     dots: true,
     infinite: whyUsData.length > 1,
@@ -997,7 +1003,7 @@ const HomePage = ({ initialSiteData = null }) => {
             <UnorderedList className="cateogoires_titles">
               {(siteData?.categories || []).filter((c) => (c?.is_live ?? 1) && (c?.status ?? 1)).map((cat) => (
                 <ListItem key={cat.id}>
-                  <Link href={`/category/${(cat.category_type || cat.category_name).toLowerCase().replace(/\s+/g, "-")}`}>
+                  <Link href={`/category/${getCategorySlug(cat)}`}>
                     <Box className="list_data" cursor="pointer">
                       <Box className="list_img_categories">
                         <figure>
@@ -1088,20 +1094,22 @@ const HomePage = ({ initialSiteData = null }) => {
         </Text>
       </Box>
 
-      <div style={{ margin: "auto", justifyContent: "center", width: "85%", marginTop: "20px" }}>
+      <div className="product-slider-shell" style={{ margin: "auto", justifyContent: "center", width: "85%", marginTop: "20px" }}>
         {bestSellerProducts.length > 0 ? (
-          <Slider {...settings}>
+          <Slider {...bestSellerSettings}>
             {bestSellerProducts.map((p) => (
               <Box
                 key={p.id}
+                className="product-slider-card product-card"
                 margin="auto"
                 borderWidth={"1px"}
                 borderRadius="lg"
                 overflow={"hidden"}
                 p={3}
               >
-                <Link href={`/product/${p.id}`} style={{ cursor: 'pointer' }}>
+                <Link href={buildProductRoutePath(p)} style={{ cursor: 'pointer' }}>
                   <Image
+                    className="product-card-image"
                     src={p.primary_image_url || assetUrl(p.primary_image)}
                     alt={p.name}
                     width="100%"
@@ -1111,15 +1119,15 @@ const HomePage = ({ initialSiteData = null }) => {
                     transition="opacity 0.2s"
                   />
                 </Link>
-                <Box mt={3}>
-                  <Link href={`/product/${p.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                <Box className="product-card-content" mt={3}>
+                  <Link href={buildProductRoutePath(p)} style={{ textDecoration: 'none', color: 'inherit' }}>
                     <Text fontWeight="600" fontSize="16px" _hover={{ color: '#D11243' }} cursor="pointer" mb={2}>
                       {p.name}
                     </Text>
                   </Link>
                   {p.price && <Text color="gray.700" fontWeight="bold" mb={3}>₹{p.price}</Text>}
                   
-                  <Box display="flex" flexDirection="column" gap={2}>
+                  <Box className="product-card-actions" display="flex" flexDirection="column" gap={2}>
                     <Select
                       size="sm"
                       placeholder={p.cuttypes?.length ? "Select cut type" : "No cuts available"}
@@ -1188,20 +1196,22 @@ const HomePage = ({ initialSiteData = null }) => {
         </Text>
       </Box>
 
-      <div style={{ margin: "auto", justifyContent: "center", width: "85%", marginTop: "20px" }}>
+      <div className="product-slider-shell" style={{ margin: "auto", justifyContent: "center", width: "85%", marginTop: "20px" }}>
         {allCategoryProducts.length > 0 ? (
           <Slider {...settings}>
             {allCategoryProducts.map((p) => (
               <Box
                 key={`all-product-${p.id}`}
+                className="product-slider-card product-card"
                 margin="auto"
                 borderWidth={"1px"}
                 borderRadius="lg"
                 overflow={"hidden"}
                 p={3}
               >
-                <Link href={`/product/${p.id}`} style={{ cursor: "pointer" }}>
+                <Link href={buildProductRoutePath(p)} style={{ cursor: "pointer" }}>
                   <Image
+                    className="product-card-image"
                     src={p.primary_image_url || assetUrl(p.primary_image)}
                     alt={p.name}
                     width="100%"
@@ -1211,15 +1221,15 @@ const HomePage = ({ initialSiteData = null }) => {
                     transition="opacity 0.2s"
                   />
                 </Link>
-                <Box mt={3}>
-                  <Link href={`/product/${p.id}`} style={{ textDecoration: "none", color: "inherit" }}>
+                <Box className="product-card-content" mt={3}>
+                  <Link href={buildProductRoutePath(p)} style={{ textDecoration: "none", color: "inherit" }}>
                     <Text fontWeight="600" fontSize="16px" _hover={{ color: "#D11243" }} cursor="pointer" mb={2}>
                       {p.name}
                     </Text>
                   </Link>
                   {p.price && <Text color="gray.700" fontWeight="bold" mb={3}>â‚¹{p.price}</Text>}
 
-                  <Box display="flex" flexDirection="column" gap={2}>
+                  <Box className="product-card-actions" display="flex" flexDirection="column" gap={2}>
                     <Select
                       size="sm"
                       placeholder={p.cuttypes?.length ? "Select cut type" : "No cuts available"}

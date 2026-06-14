@@ -1,5 +1,5 @@
 import HomePage from '../components/LandingPage/HomePage';
-import { getSiteData } from '../utils/siteData';
+import { getRequiredSiteData, getSiteData } from '../utils/siteData';
 import { buildHomepageMetadata, resolveHomepageSeo } from '../utils/seo';
 
 export async function generateMetadata() {
@@ -8,7 +8,7 @@ export async function generateMetadata() {
 }
 
 export default async function Home() {
-  const initialSiteData = await getSiteData();
+  const initialSiteData = await getRequiredSiteData();
   const homepageSeo = resolveHomepageSeo(initialSiteData);
 
   return (

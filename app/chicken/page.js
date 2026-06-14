@@ -1,5 +1,5 @@
-import Products from '../../components/ProductPage/Products';
+import { permanentRedirect } from "next/navigation";
 
 export default function ChickenPage() {
-  return <Products />;
+  permanentRedirect("/category/chicken");
 }

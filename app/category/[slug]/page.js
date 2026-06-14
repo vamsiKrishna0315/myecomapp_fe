@@ -1,5 +1,5 @@
 import CategoryPageClient from "../../../components/Category/CategoryPageClient";
-import { getSiteData } from "../../../utils/siteData";
+import { getRequiredSiteData, getSiteData } from "../../../utils/siteData";
 import { buildCategoryMetadata, resolveCategorySeo } from "../../../utils/seo";
 
 export async function generateMetadata({ params }) {
@@ -8,7 +8,7 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function CategoryPage({ params }) {
-  const siteData = await getSiteData();
+  const siteData = await getRequiredSiteData();
   const slug = params?.slug || "";
   const categorySeo = resolveCategorySeo(siteData, slug);
 

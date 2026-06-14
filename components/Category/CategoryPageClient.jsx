@@ -9,7 +9,7 @@ import React from "react";
 import { AppContext } from "../Context/ContextProvider";
 import { useCart } from "../Context/CartContext";
 import Link from "next/link";
-import { findCategoryBySlug } from "../../utils/seo";
+import { buildProductRoutePath, findCategoryBySlug } from "../../utils/seo";
 
 export default function CategoryPageClient({ slug, initialSelectedCategory = null }) {
   const { siteData, assetUrl } = useSiteData();
@@ -192,36 +192,36 @@ export default function CategoryPageClient({ slug, initialSelectedCategory = nul
       {loading && <Text>Loading products...</Text>}
       {error && <Text color="red.500">{String(error.message || error)}</Text>}
 
-      <Box display="grid" gridTemplateColumns={{ base: "1fr", md: "repeat(3, 1fr)" }} gap={4}>
+      <Box display="grid" gridTemplateColumns={{ base: "1fr", md: "repeat(3, 1fr)" }} gap={6}>
         {products.map((product) => (
           <Box
             key={product.id}
             borderWidth="1px"
             borderRadius="md"
             overflow="hidden"
-            height="400px"
             display="flex"
             flexDirection="column"
+            height="100%"
           >
-            <Link href={`/product/${product.id}`} style={{ cursor: "pointer" }}>
+            <Link href={buildProductRoutePath(product)} style={{ cursor: "pointer" }}>
               <Image
                 src={product.primary_image_url || assetUrl(product.primary_image)}
                 alt={product.name}
                 width="100%"
-                height="240px"
+                height="220px"
                 objectFit="cover"
                 _hover={{ opacity: 0.8 }}
                 transition="opacity 0.2s"
               />
             </Link>
-            <Box p={3} flex="1" display="flex" flexDirection="column" justifyContent="space-between">
-              <Link href={`/product/${product.id}`} style={{ textDecoration: "none", color: "inherit" }}>
+            <Box p={3} flex="1" display="flex" flexDirection="column">
+              <Link href={buildProductRoutePath(product)} style={{ textDecoration: "none", color: "inherit" }}>
                 <Text fontWeight="600" _hover={{ color: "#D11243" }} cursor="pointer">
                   {product.name}
                 </Text>
               </Link>
               {product.price && <Text color="gray.700">Rs.{product.price}</Text>}
-              <Box display="grid" gridTemplateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }} gap={3} mt={2}>
+              <Box display="grid" gridTemplateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }} gap={3} mt="auto" pt={2}>
                 <Box>
                   <Select
                     placeholder={product.cuttypes?.length ? "Select cut type" : "No cuts available"}

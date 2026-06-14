@@ -88,6 +88,14 @@ function slugifySegment(value) {
     .replace(/^-|-$/g, "");
 }
 
+function stripHtml(value) {
+  if (!isNonEmptyString(value)) {
+    return "";
+  }
+
+  return value.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+}
+
 function getStoreName(siteData) {
   return siteData?.store_data?.name || DEFAULT_SITE_NAME;
 }
@@ -198,6 +206,30 @@ function parseRobotsValue(value) {
   };
 }
 
+function normalizeOpenGraphType(value) {
+  if (!isNonEmptyString(value)) {
+    return "website";
+  }
+
+  const normalized = value.trim().toLowerCase();
+  const supportedTypes = new Set([
+    "website",
+    "article",
+    "book",
+    "profile",
+    "music.song",
+    "music.album",
+    "music.playlist",
+    "music.radio_station",
+    "video.movie",
+    "video.episode",
+    "video.tv_show",
+    "video.other",
+  ]);
+
+  return supportedTypes.has(normalized) ? normalized : "website";
+}
+
 export function buildRootMetadata(siteData) {
   const { siteUrl, storeName, defaultTitle, defaultDescription, image, favicon, twitterHandle } =
     getRootSeoValues(siteData);
@@ -241,7 +273,7 @@ export function resolveHomepageSeo(siteData) {
   const seo = homepageMetaTag?.seo || {};
   const title = seo.title || rootSeo.defaultTitle;
   const description = seo.description || rootSeo.defaultDescription;
-  const canonical = toAbsoluteUrl(seo.canonical || "/", siteUrl) || `${siteUrl}/`;
+  const canonical = getValidatedCanonical(seo.canonical, "/", siteUrl);
   const image =
     buildAssetUrl(seo.openGraph?.image, siteUrl) ||
     buildAssetUrl(seo.twitter?.image, siteUrl) ||
@@ -257,7 +289,7 @@ export function resolveHomepageSeo(siteData) {
     openGraph: {
       title: seo.openGraph?.title || title,
       description: seo.openGraph?.description || description,
-      type: seo.openGraph?.type || "website",
+      type: normalizeOpenGraphType(seo.openGraph?.type),
       images: image ? [{ url: image }] : undefined,
     },
     twitter: {
@@ -307,6 +339,162 @@ export function getCategorySlug(category) {
   }
 
   return slugifySegment(category.category_type || category.category_name || "");
+}
+
+export function getProductSlug(product) {
+  if (!product || typeof product !== "object") {
+    return "";
+  }
+
+  if (isNonEmptyString(product.slug)) {
+    return slugifySegment(product.slug);
+  }
+
+  return slugifySegment(product.name || product.product_name || "");
+}
+
+export function extractProductId(routeParam) {
+  if (typeof routeParam === "number" && Number.isFinite(routeParam)) {
+    return String(Math.trunc(routeParam));
+  }
+
+  if (!isNonEmptyString(routeParam)) {
+    return "";
+  }
+
+  const match = routeParam.trim().match(/^(\d+)/);
+  return match?.[1] || "";
+}
+
+export function buildProductRoutePath(product) {
+  const productId = product?.id ? String(product.id) : "";
+  const productSlug = getProductSlug(product);
+
+  if (!productId) {
+    return "/product";
+  }
+
+  return productSlug ? `/product/${productId}-${productSlug}` : `/product/${productId}`;
+}
+
+function getProductSeoSource(product) {
+  if (!product || typeof product !== "object") {
+    return {};
+  }
+
+  return product.seo || product.meta?.seo || {};
+}
+
+function getProductDescription(product, fallbackDescription) {
+  const seo = getProductSeoSource(product);
+  const descriptionCandidates = [
+    seo.description,
+    stripHtml(product?.short_description),
+    stripHtml(product?.description),
+    stripHtml(product?.long_description),
+    fallbackDescription,
+  ];
+
+  return descriptionCandidates.find((value) => isNonEmptyString(value)) || fallbackDescription;
+}
+
+function buildProductJsonLd(product, canonical, image, description) {
+  if (!product) {
+    return null;
+  }
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: product.name || product.product_name || `Product ${product.id || ""}`.trim(),
+    description,
+    image: image ? [image] : undefined,
+    sku: isNonEmptyString(product.sku) ? product.sku : undefined,
+    category: product?.category?.category_name || product?.category || undefined,
+    offers:
+      product?.price != null
+        ? {
+            "@type": "Offer",
+            priceCurrency: "INR",
+            price: String(product.price),
+            availability:
+              product?.is_live === false || product?.status === 0
+                ? "https://schema.org/OutOfStock"
+                : "https://schema.org/InStock",
+            url: canonical,
+          }
+        : undefined,
+  };
+}
+
+export function resolveProductSeo(siteData, product, routeParam = "") {
+  const rootSeo = getRootSeoValues(siteData);
+  const seo = getProductSeoSource(product);
+  const routePath = buildProductRoutePath(product);
+  const title = seo.title || product?.name || product?.product_name || rootSeo.defaultTitle;
+  const description = getProductDescription(product, rootSeo.defaultDescription);
+  const canonical = getValidatedCanonical(seo.canonical, routePath, rootSeo.siteUrl);
+  const image =
+    buildAssetUrl(seo.openGraph?.image, rootSeo.siteUrl) ||
+    buildAssetUrl(seo.twitter?.image, rootSeo.siteUrl) ||
+    buildAssetUrl(product?.primary_image_url || product?.primary_image, rootSeo.siteUrl) ||
+    rootSeo.image;
+  const routeProductId = extractProductId(routeParam);
+  const currentPath = routeProductId ? `/product/${routeParam}` : routePath;
+
+  return {
+    siteUrl: rootSeo.siteUrl,
+    storeName: rootSeo.storeName,
+    product,
+    routePath,
+    currentPath,
+    title,
+    description,
+    canonical,
+    robots: parseRobotsValue(seo.robots),
+    openGraph: {
+      title: seo.openGraph?.title || title,
+      description: seo.openGraph?.description || description,
+      type: normalizeOpenGraphType(seo.openGraph?.type),
+      images: image ? [{ url: image }] : undefined,
+    },
+    twitter: {
+      card: seo.twitter?.card || "summary_large_image",
+      title: seo.twitter?.title || title,
+      description: seo.twitter?.description || description,
+      images: image ? [image] : undefined,
+      site: rootSeo.twitterHandle || undefined,
+      creator: rootSeo.twitterHandle || undefined,
+    },
+    jsonLd:
+      seo.json_ld && (Array.isArray(seo.json_ld) || typeof seo.json_ld === "object")
+        ? seo.json_ld
+        : buildProductJsonLd(product, canonical, image, description),
+  };
+}
+
+export function buildProductMetadata(siteData, product, routeParam = "") {
+  const productSeo = resolveProductSeo(siteData, product, routeParam);
+
+  return {
+    title: {
+      absolute: productSeo.title,
+    },
+    description: productSeo.description,
+    alternates: {
+      canonical: productSeo.canonical,
+    },
+    openGraph: {
+      type: productSeo.openGraph.type,
+      siteName: productSeo.storeName,
+      title: productSeo.openGraph.title,
+      description: productSeo.openGraph.description,
+      url: productSeo.canonical,
+      images: productSeo.openGraph.images,
+    },
+    twitter: productSeo.twitter,
+    robots: productSeo.robots,
+  };
 }
 
 export function findCategoryBySlug(siteData, slug) {
@@ -372,7 +560,7 @@ export function resolveCategorySeo(siteData, slug) {
     openGraph: {
       title: seo.openGraph?.title || title,
       description: seo.openGraph?.description || description,
-      type: seo.openGraph?.type || "website",
+      type: normalizeOpenGraphType(seo.openGraph?.type),
       images: image ? [{ url: image }] : undefined,
     },
     twitter: {

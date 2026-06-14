@@ -1,5 +1,16 @@
 import assert from "node:assert/strict";
-import { buildCategoryMetadata, findCategoryBySlug, getCategorySlug, resolveCategorySeo } from "../utils/seo.js";
+import {
+  buildCategoryMetadata,
+  buildProductMetadata,
+  buildProductRoutePath,
+  extractProductId,
+  findCategoryBySlug,
+  getCategorySlug,
+  getProductSlug,
+  resolveHomepageSeo,
+  resolveCategorySeo,
+  resolveProductSeo,
+} from "../utils/seo.js";
 
 function createSiteData(overrides = {}) {
   return {
@@ -110,4 +121,89 @@ runTest("category SEO passes valid JSON-LD and robots through normalized helper"
   });
 });
 
+runTest("homepage canonical hardening rejects non-root backend canonicals", () => {
+  const siteData = createSiteData({
+    meta_tags: [
+      {
+        metaable_type: "App\\Models\\Page",
+        metaable: {
+          slug: "/",
+        },
+        seo: {
+          canonical: "https://shop.example/category/chicken",
+          title: "Home",
+        },
+      },
+    ],
+  });
+
+  const seo = resolveHomepageSeo(siteData);
+
+  assert.equal(seo.canonical, "https://shop.example/");
+});
+
 console.log("Category SEO tests completed.");
+
+runTest("product route helper builds hybrid canonical route and parses legacy numeric params", () => {
+  assert.equal(getProductSlug({ id: 15, slug: "Chicken Breast" }), "chicken-breast");
+  assert.equal(buildProductRoutePath({ id: 15, name: "Chicken Breast Boneless" }), "/product/15-chicken-breast-boneless");
+  assert.equal(extractProductId("15"), "15");
+  assert.equal(extractProductId("15-chicken-breast-boneless"), "15");
+});
+
+runTest("product metadata canonicalizes to hybrid route and resolves image URLs", () => {
+  process.env.NEXT_PUBLIC_ASSET_BASE_URL = "https://cdn.example";
+
+  const siteData = createSiteData();
+  const product = {
+    id: 15,
+    name: "Chicken Breast Boneless",
+    description: "<p>Lean and tender chicken breast.</p>",
+    primary_image: "images/products/chicken-breast.jpg",
+    seo: {
+      title: "Buy Chicken Breast Boneless Online",
+      canonical: "https://shop.example/product/15",
+      openGraph: {
+        image: "/images/seo/chicken-breast-og.jpg",
+      },
+    },
+  };
+
+  const metadata = buildProductMetadata(siteData, product, "15");
+
+  assert.equal(metadata.title.absolute, "Buy Chicken Breast Boneless Online");
+  assert.equal(metadata.alternates.canonical, "https://shop.example/product/15-chicken-breast-boneless");
+  assert.equal(metadata.openGraph.url, "https://shop.example/product/15-chicken-breast-boneless");
+  assert.deepEqual(metadata.openGraph.images, [{ url: "https://cdn.example/images/seo/chicken-breast-og.jpg" }]);
+  assert.deepEqual(metadata.twitter.images, ["https://cdn.example/images/seo/chicken-breast-og.jpg"]);
+});
+
+runTest("product SEO falls back to generated JSON-LD and normalized description", () => {
+  process.env.NEXT_PUBLIC_ASSET_BASE_URL = "https://cdn.example";
+
+  const siteData = createSiteData();
+  const product = {
+    id: 21,
+    name: "Fresh Mutton Curry Cut",
+    description: "<div>Fresh mutton cut for curries.</div>",
+    price: 799,
+    sku: "MUTTON-21",
+    primary_image_url: "https://images.example/mutton.jpg",
+    category: {
+      category_name: "Mutton",
+    },
+    seo: {
+      robots: "noindex, follow",
+    },
+  };
+
+  const seo = resolveProductSeo(siteData, product, "21-fresh-mutton-curry-cut");
+
+  assert.deepEqual(seo.robots, { index: false, follow: true });
+  assert.equal(seo.description, "Fresh mutton cut for curries.");
+  assert.equal(seo.jsonLd["@type"], "Product");
+  assert.equal(seo.jsonLd.offers.price, "799");
+  assert.equal(seo.jsonLd.offers.url, "https://shop.example/product/21-fresh-mutton-curry-cut");
+});
+
+console.log("Product SEO tests completed.");
