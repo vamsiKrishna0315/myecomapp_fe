@@ -6,7 +6,7 @@ export const getSiteData = cache(async () => {
 
   try {
     const res = await fetch(url, {
-      cache: "no-store",
+      next: { revalidate: 300 },
     });
 
     if (!res.ok) {
@@ -16,7 +16,6 @@ export const getSiteData = cache(async () => {
 
     const json = await res.json();
     const data = json?.data ?? json;
-    console.log("Site data API result:", data);
     return data;
   } catch (error) {
     console.warn(`Site data request failed for ${url}:`, error);

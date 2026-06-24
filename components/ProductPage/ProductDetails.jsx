@@ -30,6 +30,9 @@ import {
   export default function ProductDetails({ params }) {
     const dispatch = useDispatch();
     const toast = useToast();
+    const categoryTextColor = useColorModeValue("gray.900", "gray.400");
+    const dividerBorderColor = useColorModeValue("gray.200", "gray.600");
+    const bodyTextColor = useColorModeValue("gray.500", "gray.400");
     const id = params?.id;
     const [currentProduct, setCurrentProduct] = useState({});
     const [selectedUnit, setSelectedUnit] = useState(null);
@@ -206,7 +209,7 @@ import {
                 {currentProduct.title}
               </Heading>
               <Text
-                color={useColorModeValue("gray.900", "gray.400")}
+                color={categoryTextColor}
                 fontWeight={300}
                 fontSize={"md"}
                 textAlign="left"
@@ -221,27 +224,27 @@ import {
               direction={"column"}
               divider={
                 <StackDivider
-                  borderColor={useColorModeValue("gray.200", "gray.600")}
+                  borderColor={dividerBorderColor}
                 />
               }
             >
               <VStack spacing={{ base: 4, sm: 6 }} textAlign="left" >
                 <Text                  
-                  color={useColorModeValue("gray.500", "gray.400")}
+                  color={bodyTextColor}
                 >
                   Keep your chopping board aside, our special nakhras have curated special cuts of chicken for 
                   Chicken Popcorn, Garlic Chicken Bites, Chicken Nuggets and more!
                 </Text>
                 <Text
                   fontSize={"md"}
-                  color={useColorModeValue("gray.500", "gray.400")}
+                  color={bodyTextColor}
                 >
                   Our Chicken Mini Bites (Boneless) is made by cutting fresh boneless chicken into bite-sized pieces. 
                   You can use them to whip up easy toppings for your pizzas, salads, pastas, the possibilities are endless.
                 </Text>
                 <Text
                   fontSize={"md"}
-                  color={useColorModeValue("gray.500", "gray.400")}
+                  color={bodyTextColor}
                 >
                   Licious chickens are raised on biosecure farms and are antibiotic residue-free. They are cut and 
                   cleaned by experts so you can cook them straight off the pack.Our fresh chicken cuts are stored in 
@@ -249,7 +252,7 @@ import {
                 </Text>
                 <Text
                   fontSize={"md"}
-                  color={useColorModeValue("gray.500", "gray.400")}
+                  color={bodyTextColor}
                 >
                   Order Licious Chicken Mini Bites (Boneless) online and get it home delivered.
                 </Text>
