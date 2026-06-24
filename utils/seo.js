@@ -163,8 +163,8 @@ function getDefaultImage(siteData, siteUrl, homepageMetaTag = null) {
   return (
     buildAssetUrl(homepageMetaTag?.seo?.openGraph?.image, siteUrl) ||
     buildAssetUrl(homepageMetaTag?.seo?.twitter?.image, siteUrl) ||
-    buildAssetUrl(siteData?.store_data?.logo, siteUrl) ||
-    buildAssetUrl(siteData?.store_data?.favicon, siteUrl) ||
+    buildAssetUrl(siteData?.store_data?.logo_url, siteUrl) ||
+    buildAssetUrl(siteData?.store_data?.favicon_url, siteUrl) ||
     toAbsoluteUrl("/logo192.png", siteUrl)
   );
 }
@@ -177,7 +177,7 @@ function getRootSeoValues(siteData) {
   const defaultDescription =
     siteData?.store_data?.meta_description || homepageMetaTag?.seo?.description || DEFAULT_DESCRIPTION;
   const image = getDefaultImage(siteData, siteUrl, homepageMetaTag);
-  const favicon = buildAssetUrl(siteData?.store_data?.favicon, siteUrl) || "/favicon.ico";
+  const favicon = buildAssetUrl(siteData?.store_data?.favicon_url, siteUrl) || "/favicon.ico";
 
   return {
     siteUrl,
@@ -244,7 +244,7 @@ export function buildRootMetadata(siteData) {
     icons: {
       icon: favicon,
       shortcut: favicon,
-      apple: buildAssetUrl(siteData?.store_data?.logo, siteUrl) || "/logo192.png",
+      apple: buildAssetUrl(siteData?.store_data?.logo_url, siteUrl) || "/logo192.png",
     },
     openGraph: {
       type: "website",
@@ -437,7 +437,7 @@ export function resolveProductSeo(siteData, product, routeParam = "") {
   const image =
     buildAssetUrl(seo.openGraph?.image, rootSeo.siteUrl) ||
     buildAssetUrl(seo.twitter?.image, rootSeo.siteUrl) ||
-    buildAssetUrl(product?.primary_image_url || product?.primary_image, rootSeo.siteUrl) ||
+    buildAssetUrl(product?.primary_image_url, rootSeo.siteUrl) ||
     rootSeo.image;
   const routeProductId = extractProductId(routeParam);
   const currentPath = routeProductId ? `/product/${routeParam}` : routePath;
@@ -545,7 +545,7 @@ export function resolveCategorySeo(siteData, slug) {
   const image =
     buildAssetUrl(seo.openGraph?.image, rootSeo.siteUrl) ||
     buildAssetUrl(seo.twitter?.image, rootSeo.siteUrl) ||
-    buildAssetUrl(category?.category_image_url || category?.category_image, rootSeo.siteUrl) ||
+    buildAssetUrl(category?.category_image_url, rootSeo.siteUrl) ||
     rootSeo.image;
 
   return {

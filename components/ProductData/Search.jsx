@@ -92,14 +92,6 @@ const Search = () => {
     setSearchQuery("");
   };
 
-  const getAssetUrl = (path) => {
-    if (!path) return "";
-    if (path.startsWith("http")) return path;
-    const assetsBase = process.env.NEXT_PUBLIC_ASSET_BASE_URL || BASE_URL || "";
-    const sep = assetsBase.endsWith("/") ? "" : "/";
-    return assetsBase ? `${assetsBase}${sep}storage/${path}` : path;
-  };
-
   return (
     <Box w="100%" h="100%" position="relative" ref={searchRef}>
       <Input
@@ -149,12 +141,12 @@ const Search = () => {
                   onClick={() => handleProductClick(product)}
                 >
                   <Image
-                    src={product.primary_image_url || getAssetUrl(product.primary_image)}
+                    src={product.primary_image_url || "/images/logo/logo.webp"}
                     alt={product.name}
                     boxSize="50px"
                     objectFit="cover"
                     borderRadius="md"
-                    fallbackSrc="/images/placeholder.png"
+                    fallbackSrc="/images/logo/logo.webp"
                   />
                   <Box flex="1">
                     <Text fontWeight="600" fontSize="14px" color="#2d3748" noOfLines={1}>

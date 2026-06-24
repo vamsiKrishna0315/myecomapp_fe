@@ -22,6 +22,7 @@ import { useSiteData } from '../Context/SiteDataContext';
 import CheckoutPage from '../Checkout/CheckoutPage';
 import api from '../../utils/api';
 import { clearStoredCart, readStoredCart, writeStoredCart } from '../../utils/cartStorage';
+import { getCartLineTotal, getCartUnitPrice, resolveCartProduct } from '../../utils/productUnits';
 
 const TIME_SLOTS = [
   '10:00 AM - 12:00 PM',
@@ -207,10 +208,10 @@ const NewCheckout = () => {
   const subtotal = useMemo(
     () =>
       cartItems.reduce(
-        (acc, item) => acc + parseFloat(item.total_price || item.line_total || item.price || 0),
+        (acc, item) => acc + getCartLineTotal(item, productIndex),
         0
       ),
-    [cartItems]
+    [cartItems, productIndex]
   );
   const taxAmount = useMemo(() => subtotal * 0.18, [subtotal]);
   const total = useMemo(() => subtotal - discount + taxAmount, [subtotal, discount, taxAmount]);
@@ -903,7 +904,10 @@ const NewCheckout = () => {
 
     const orderPayload = {
       items: cartItems.map((item) => {
+        const product = resolveCartProduct(item, productIndex);
         const cutId = item.cuttype_id || item.product_cut_id || item.cut_id || item.productCutId || 1;
+        const unitPrice = getCartUnitPrice(item, productIndex);
+        const totalPrice = getCartLineTotal(item, productIndex);
 
         return {
           product_id: item.product_id,
@@ -911,12 +915,13 @@ const NewCheckout = () => {
           cut_id: cutId,
           product_name: item.product?.name || `Product ${item.product_id}`,
           cut_name: item.cut_name || 'Standard',
-          unit_price: parseFloat(item.unit_price || item.price || 0),
+          unit_price: unitPrice,
           quantity: parseFloat(item.quantity || 1),
           weight: parseFloat(item.weight || item.quantity || 1),
-          weight_unit: (item.weight_unit || item.quantity_unit || 'kg').replace('gram', 'g'),
-          total_price: parseFloat(item.total_price || item.line_total || item.price || 0),
+          weight_unit: item.unit || item.quantity_unit || item.weight_unit || 'kg',
+          total_price: totalPrice,
           special_instructions: item.special_instructions || '',
+          grams_per_piece: product?.grams_per_piece ?? null,
         };
       }),
       billing_address_id: selectedBillingAddress?.id || null,

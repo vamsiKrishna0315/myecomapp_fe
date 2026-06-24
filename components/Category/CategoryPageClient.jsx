@@ -10,6 +10,7 @@ import { AppContext } from "../Context/ContextProvider";
 import { useCart } from "../Context/CartContext";
 import Link from "next/link";
 import { buildProductRoutePath, findCategoryBySlug } from "../../utils/seo";
+import { getAllowedUnits, getDisplayPrice, getInitialUnit, getUnitText } from "../../utils/productUnits";
 
 export default function CategoryPageClient({ slug, initialSelectedCategory = null }) {
   const { siteData, assetUrl } = useSiteData();
@@ -111,7 +112,7 @@ export default function CategoryPageClient({ slug, initialSelectedCategory = nul
     }
 
     const qty = Number(quantities[product.id] ?? 1);
-    const unit = quantityUnits[product.id] ?? "gram";
+    const unit = quantityUnits[product.id] ?? getInitialUnit(product);
 
     if (!qty || qty <= 0) {
       toast({
@@ -193,85 +194,94 @@ export default function CategoryPageClient({ slug, initialSelectedCategory = nul
       {error && <Text color="red.500">{String(error.message || error)}</Text>}
 
       <Box display="grid" gridTemplateColumns={{ base: "1fr", md: "repeat(3, 1fr)" }} gap={6}>
-        {products.map((product) => (
-          <Box
-            key={product.id}
-            borderWidth="1px"
-            borderRadius="md"
-            overflow="hidden"
-            display="flex"
-            flexDirection="column"
-            height="100%"
-          >
-            <Link href={buildProductRoutePath(product)} style={{ cursor: "pointer" }}>
-              <Image
-                src={product.primary_image_url || assetUrl(product.primary_image)}
-                alt={product.name}
-                width="100%"
-                height="220px"
-                objectFit="cover"
-                _hover={{ opacity: 0.8 }}
-                transition="opacity 0.2s"
-              />
-            </Link>
-            <Box p={3} flex="1" display="flex" flexDirection="column">
-              <Link href={buildProductRoutePath(product)} style={{ textDecoration: "none", color: "inherit" }}>
-                <Text fontWeight="600" _hover={{ color: "#D11243" }} cursor="pointer">
-                  {product.name}
-                </Text>
+        {products.map((product) => {
+          const selectedUnit = quantityUnits[product.id] ?? getInitialUnit(product);
+          const allowedUnits = getAllowedUnits(product);
+          const displayPrice = getDisplayPrice(product, selectedUnit);
+
+          return (
+            <Box
+              key={product.id}
+              borderWidth="1px"
+              borderRadius="md"
+              overflow="hidden"
+              display="flex"
+              flexDirection="column"
+              height="100%"
+            >
+              <Link href={buildProductRoutePath(product)} style={{ cursor: "pointer" }}>
+                <Image
+                  src={product.primary_image_url || assetUrl(product.primary_image)}
+                  alt={product.name}
+                  width="100%"
+                  height="220px"
+                  objectFit="cover"
+                  _hover={{ opacity: 0.8 }}
+                  transition="opacity 0.2s"
+                />
               </Link>
-              {product.price && <Text color="gray.700">Rs.{product.price}</Text>}
-              <Box display="grid" gridTemplateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }} gap={3} mt="auto" pt={2}>
-                <Box>
-                  <Select
-                    placeholder={product.cuttypes?.length ? "Select cut type" : "No cuts available"}
-                    value={selectedCuts[product.id] ?? ""}
-                    onChange={(event) =>
-                      setSelectedCuts((prev) => ({ ...prev, [product.id]: Number(event.target.value) }))
-                    }
-                    isDisabled={!product.cuttypes || product.cuttypes.length === 0}
-                  >
-                    {(product.cuttypes || []).map((cutType) => (
-                      <option key={cutType.id} value={cutType.id}>
-                        {cutType.name}
-                      </option>
-                    ))}
-                  </Select>
-                </Box>
-                <Box>
-                  <Input
-                    type="number"
-                    min={1}
-                    placeholder="Quantity"
-                    value={quantities[product.id] ?? ""}
-                    onChange={(event) =>
-                      setQuantities((prev) => ({ ...prev, [product.id]: event.target.value }))
-                    }
-                  />
-                </Box>
-                <Box>
-                  <Select
-                    placeholder="Unit"
-                    value={quantityUnits[product.id] ?? "gram"}
-                    onChange={(event) =>
-                      setQuantityUnits((prev) => ({ ...prev, [product.id]: event.target.value }))
-                    }
-                  >
-                    <option value="gram">gram</option>
-                    <option value="kg">kg</option>
-                    <option value="piece">piece</option>
-                    <option value="pack">pack</option>
-                  </Select>
-                </Box>
-                <Box>
-                  <Button width="100%" colorScheme="red" onClick={() => handleAddToCart(product)}>
-                    Add To Cart
-                  </Button>
+              <Box p={3} flex="1" display="flex" flexDirection="column">
+                <Link href={buildProductRoutePath(product)} style={{ textDecoration: "none", color: "inherit" }}>
+                  <Text fontWeight="600" _hover={{ color: "#D11243" }} cursor="pointer">
+                    {product.name}
+                  </Text>
+                </Link>
+                <Text color="gray.700">
+                  Rs.{parseFloat(displayPrice || 0).toFixed(2)} / {getUnitText(selectedUnit)}
+                </Text>
+                <Box display="grid" gridTemplateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }} gap={3} mt="auto" pt={2}>
+                  <Box>
+                    <Select
+                      placeholder={product.cuttypes?.length ? "Select cut type" : "No cuts available"}
+                      value={selectedCuts[product.id] ?? ""}
+                      onChange={(event) =>
+                        setSelectedCuts((prev) => ({ ...prev, [product.id]: Number(event.target.value) }))
+                      }
+                      isDisabled={!product.cuttypes || product.cuttypes.length === 0}
+                    >
+                      {(product.cuttypes || []).map((cutType) => (
+                        <option key={cutType.id} value={cutType.id}>
+                          {cutType.name}
+                        </option>
+                      ))}
+                    </Select>
+                  </Box>
+                  <Box>
+                    <Input
+                      type="number"
+                      min={1}
+                      placeholder="Quantity"
+                      value={quantities[product.id] ?? ""}
+                      onChange={(event) =>
+                        setQuantities((prev) => ({ ...prev, [product.id]: event.target.value }))
+                      }
+                    />
+                  </Box>
+                  <Box>
+                    <Select
+                      placeholder="Unit"
+                      value={selectedUnit}
+                      onChange={(event) =>
+                        setQuantityUnits((prev) => ({ ...prev, [product.id]: event.target.value }))
+                      }
+                    >
+                      {allowedUnits.map((unit) => (
+                        <option key={unit} value={unit}>
+                          {unit}
+                        </option>
+                      ))}
+                    </Select>
+                  </Box>
+                  <Box>
+                    <Button width="100%" colorScheme="red" onClick={() => handleAddToCart(product)}>
+                      Add To Cart
+                    </Button>
+                  </Box>
                 </Box>
               </Box>
             </Box>
-          </Box>
-        ))}
+          );
+        })}
         {!loading && !products.length && (
           <Box p={4}>
             <Text>No products found for this category.</Text>

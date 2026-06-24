@@ -109,7 +109,7 @@ const Navbar = () => {
     ctx?.setIsModalVisible(true);
     quickLoginDrawer.onOpen();
   };
-  const { siteData, assetUrl, loading } = useSiteData();
+  const { siteData, loading } = useSiteData();
 
   return (
     <>
@@ -238,8 +238,9 @@ const Navbar = () => {
                                     height={"36px"}
                                     width="36px"
                                     marginRight="14px"
-                                    src={cat.category_image_url || assetUrl(cat.category_image)}
+                                    src={cat.category_image_url || "/images/logo/logo.webp"}
                                     alt={cat.category_name}
+                                    fallbackSrc="/images/logo/logo.webp"
                                   />
                                   <Box color="#4b4f54" fontWeight={"500"} lineHeight="19px" fontSize={"16px"}>
                                     {cat.category_name}

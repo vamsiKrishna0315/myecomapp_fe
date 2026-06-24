@@ -28,6 +28,7 @@ import { useSiteData } from "../Context/SiteDataContext";
 import { useCart } from "../Context/CartContext";
 import { AppContext } from "../Context/ContextProvider";
 import { buildProductApiUrl } from "../../utils/product";
+import { getAllowedUnits, getDisplayPrice, getInitialUnit, getUnitText } from "../../utils/productUnits";
 
 export default function ProductDetailPageClient({ productId, initialProduct = null }) {
   const toast = useToast();
@@ -41,7 +42,7 @@ export default function ProductDetailPageClient({ productId, initialProduct = nu
   const [error, setError] = useState(null);
   const [selectedCutId, setSelectedCutId] = useState("");
   const [quantity, setQuantity] = useState(1);
-  const [quantityUnit, setQuantityUnit] = useState("gram");
+  const [quantityUnit, setQuantityUnit] = useState("kg");
 
   useEffect(() => {
     setProduct(initialProduct);
@@ -80,6 +81,14 @@ export default function ProductDetailPageClient({ productId, initialProduct = nu
     fetchProduct();
   }, [initialProduct, productId]);
 
+  useEffect(() => {
+    if (!product) {
+      return;
+    }
+
+    setQuantityUnit(getInitialUnit(product));
+  }, [product]);
+
   const handleAddToCart = () => {
     if (!product) {
       return;
@@ -117,12 +126,18 @@ export default function ProductDetailPageClient({ productId, initialProduct = nu
       return;
     }
 
+    const pricePerUnit = parseFloat(getDisplayPrice(product, quantityUnit) || 0);
+    const totalPrice = parseFloat((pricePerUnit * qty) || 0);
+
     const payload = {
       customer_id: Number(customerId),
       product_id: product.id,
       product_cut_id: selectedCutId || null,
       quantity: qty,
       quantity_unit: quantityUnit,
+      unit: quantityUnit, // new: explicit unit field
+      price_per_unit: pricePerUnit,
+      total: totalPrice,
     };
 
     dispatch(addProductToCart(payload))
@@ -190,6 +205,9 @@ export default function ProductDetailPageClient({ productId, initialProduct = nu
     );
   }
 
+  const allowedUnits = getAllowedUnits(product);
+  const displayPrice = getDisplayPrice(product, quantityUnit);
+
   return (
     <Container maxW="7xl" mt={8} mb={8}>
       <SimpleGrid
@@ -226,7 +244,7 @@ export default function ProductDetailPageClient({ productId, initialProduct = nu
               </Text>
             )}
             <Text color="#D11243" fontWeight={700} fontSize={{ base: "2xl", lg: "3xl" }}>
-              Rs.{parseFloat(product.price).toFixed(2)}
+              Rs.{parseFloat(displayPrice || 0).toFixed(2)} / {getUnitText(quantityUnit)}
             </Text>
             {product.sku && (
               <Badge colorScheme="gray" mt={2}>
@@ -305,10 +323,11 @@ export default function ProductDetailPageClient({ productId, initialProduct = nu
                   Unit
                 </Text>
                 <Select value={quantityUnit} onChange={(e) => setQuantityUnit(e.target.value)}>
-                  <option value="gram">gram</option>
-                  <option value="kg">kg</option>
-                  <option value="piece">piece</option>
-                  <option value="pack">pack</option>
+                  {allowedUnits.map((unit) => (
+                    <option key={unit} value={unit}>
+                      {getUnitText(unit)}
+                    </option>
+                  ))}
                 </Select>
               </Box>
             </SimpleGrid>

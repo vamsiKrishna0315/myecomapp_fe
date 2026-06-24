@@ -39,6 +39,9 @@ const addProductToCart = (payload) => (dispatch) => {
     ...(payload.product_cut_id ? { product_cut_id: Number(payload.product_cut_id) } : {}),
     ...(payload.quantity ? { quantity: Number(payload.quantity) } : {}),
     ...(payload.quantity_unit ? { quantity_unit: String(payload.quantity_unit) } : {}),
+    ...(payload.unit ? { unit: String(payload.unit) } : {}),
+    ...(payload.price_per_unit != null ? { price_per_unit: Number(payload.price_per_unit) } : {}),
+    ...(payload.total != null ? { total: Number(payload.total) } : {}),
   };
   const config = {
     headers: {

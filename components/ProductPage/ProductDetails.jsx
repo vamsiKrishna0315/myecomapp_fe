@@ -16,41 +16,165 @@ import {
     List,
     ListItem,
     Divider,
+    Select,
+    Spinner,
+    useToast,
   } from "@chakra-ui/react";
   import source_image from "./source_image.jpg";
   import delhivery_image from "./delhivery_image.jpg";
   import React, { useEffect, useState } from "react";
   import { useDispatch, useSelector } from "react-redux";
   import { addProductToCart, getProducts } from "../../redux/ProductReducer/action";
-  
+  import unitConversionService from "../../utils/unitConversion";
+
   export default function ProductDetails({ params }) {
     const dispatch = useDispatch();
+    const toast = useToast();
     const id = params?.id;
     const [currentProduct, setCurrentProduct] = useState({});
+    const [selectedUnit, setSelectedUnit] = useState(null);
+    const [displayPrice, setDisplayPrice] = useState(0);
+    const [loading, setLoading] = useState(true);
+    const [addingToCart, setAddingToCart] = useState(false);
     const chicken = useSelector((state) => state.reducer.chicken);
   
-    useEffect(() => {
-      if (chicken.length === 0) {
-        let cat = chicken;
-        dispatch(getProducts(cat));
-      }
-    }, [chicken?.length, dispatch]);
-  
+    // Fetch product from API
     useEffect(() => {
       if (id) {
-        const temp = chicken.find((item) => item.id === Number(id));
-        //   console.log(temp)
-        temp && setCurrentProduct(temp);
+        fetchProductDetails(id);
       }
-    }, [chicken, id]);
-  
-    const addToCartFunction = () => {
-      console.log(currentProduct);
-      currentProduct && dispatch(addProductToCart(currentProduct));
+    }, [id]);
+
+    const fetchProductDetails = async (productId) => {
+      try {
+        setLoading(true);
+        const base = process.env.NEXT_PUBLIC_BACKEND_BASE_URL || "";
+        const apiType = process.env.NEXT_PUBLIC_API_TYPE || "customer";
+        const sep = base.endsWith("/") ? "" : "/";
+        const url = `${base}${sep}api/v1/${apiType}/products/${productId}`;
+
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error("Failed to fetch product");
+        }
+
+        const data = await response.json();
+        const product = data?.data || data;
+
+        setCurrentProduct(product);
+
+        // Set initial unit to base_price_unit or first allowed unit
+        const initialUnit = product.base_price_unit ||
+          (Array.isArray(product.allowed_units) && product.allowed_units[0]) ||
+          'kg';
+        setSelectedUnit(initialUnit);
+
+        // Calculate initial display price
+        calculateAndSetPrice(product, initialUnit);
+      } catch (error) {
+        console.error("Error fetching product:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load product details",
+          status: "error",
+          duration: 3,
+          isClosable: true,
+        });
+      } finally {
+        setLoading(false);
+      }
     };
-    // console.log(chicken);
-    console.log(currentProduct);
-  
+
+    const calculateAndSetPrice = (product, unit) => {
+      try {
+        const basePrice = parseFloat(product.price || 0);
+        const baseUnit = product.base_price_unit;
+        const gramsPerPiece = product.grams_per_piece != null ? parseFloat(product.grams_per_piece) : null;
+
+        let price = basePrice;
+
+        // If the unit is different from base_price_unit, convert the price using canonical service
+        if (unit && baseUnit && unit !== baseUnit) {
+          price = unitConversionService.calculatePrice(basePrice, String(baseUnit), String(unit), gramsPerPiece);
+        }
+
+        setDisplayPrice(parseFloat(Number(price).toFixed(2)));
+      } catch (error) {
+        console.error("Error calculating price:", error);
+        setDisplayPrice(parseFloat(product.price || 0));
+      }
+    };
+
+    const handleUnitChange = (e) => {
+      const newUnit = e.target.value;
+      setSelectedUnit(newUnit);
+      calculateAndSetPrice(currentProduct, newUnit);
+    };
+
+    const addToCartFunction = async () => {
+      try {
+        if (!currentProduct.id) {
+          toast({
+            title: "Error",
+            description: "Product information missing",
+            status: "error",
+            duration: 3,
+            isClosable: true,
+          });
+          return;
+        }
+
+        setAddingToCart(true);
+
+        // Get customer_id from localStorage or state
+        const token = typeof window !== 'undefined' ? localStorage.getItem('Token') : null;
+        const customer_id = typeof window !== 'undefined' ? localStorage.getItem('customer_id') : null;
+
+        const cartItem = {
+          product_id: currentProduct.id,
+          customer_id: customer_id ? Number(customer_id) : null,
+          quantity: 1,
+          quantity_unit: selectedUnit,
+          product_cut_id: currentProduct.product_cut_id || null,
+        };
+
+        await dispatch(addProductToCart(cartItem));
+
+        toast({
+          title: "Success",
+          description: `Added to cart (${selectedUnit})`,
+          status: "success",
+          duration: 3,
+          isClosable: true,
+        });
+      } catch (error) {
+        console.error("Error adding to cart:", error);
+        toast({
+          title: "Error",
+          description: "Failed to add to cart",
+          status: "error",
+          duration: 3,
+          isClosable: true,
+        });
+      } finally {
+        setAddingToCart(false);
+      }
+    };
+
+    if (loading) {
+      return (
+        <Container maxW={"7xl"} mt="2rem">
+          <Flex justifyContent="center" alignItems="center" h="400px">
+            <Spinner size="lg" />
+          </Flex>
+        </Container>
+      );
+    }
+
+    const allowedUnits = Array.isArray(currentProduct.allowed_units)
+      ? currentProduct.allowed_units
+      : ['kg'];
+
     return (
       <Container maxW={"7xl"} mt="2rem" boxShadow={" rgba(0, 0, 0, 0.1) 0px 10px 50px"}>
         <SimpleGrid
@@ -59,8 +183,8 @@ import {
           py={{ base: 18, md: 24 }}
           borderRadius="5px"
         >
-          <Flex >
-            <Image          
+          <Flex>
+            <Image
               rounded={"md"}
               alt={"product image"}
               src={currentProduct.image}
@@ -138,24 +262,47 @@ import {
               >
                 <Flex justifyContent={"space-between"}>
                     <div className="picess_class22">
-                        <Image className="piecess_image111" src="https://d2407na1z3fc0t.cloudfront.net/Banner/Pieces.png" alte="pices_image11" />
-                        <Text>No. of Pieces:14-16</Text>
+                        <Image className="piecess_image111" src="https://d2407na1z3fc0t.cloudfront.net/Banner/Pieces.png" alt="pices_image11" />
+                        <Text>No. of Pieces: {currentProduct.pieces_per_pack || "14-16"}</Text>
                     </div>
 
                     <div className="picess_class22">
-                        <Image className="piecess_image111" src="https://d2407na1z3fc0t.cloudfront.net/Banner/Serves.png" alte="serve_image11" />
-                        <Text>Serve 4</Text>
+                        <Image className="piecess_image111" src="https://d2407na1z3fc0t.cloudfront.net/Banner/Serves.png" alt="serve_image11" />
+                        <Text>Serve {currentProduct.serves || "4"}</Text>
                     </div>
-                  
+
                 </Flex>
                 <Divider margin={"5px"} />
                 <Flex justifyContent={"space-between"}>
                   <div className="picess_class22">
-                      <Image className="piecess_image111" src="https://d2407na1z3fc0t.cloudfront.net/Banner/Netwt.png" alte="grams_image11" />
-                      <Text>526gms</Text>
+                      <Image className="piecess_image111" src="https://d2407na1z3fc0t.cloudfront.net/Banner/Netwt.png" alt="grams_image11" />
+                      <Text>{currentProduct.weight_in_grams || "526"}g</Text>
                   </div>
                 </Flex>
               </Box>
+
+              {/* Dynamic Unit Selector */}
+              {allowedUnits.length > 1 && (
+                <Box>
+                  <Text fontWeight="600" mb="8px">
+                    Select Unit:
+                  </Text>
+                  <Select
+                    value={selectedUnit}
+                    onChange={handleUnitChange}
+                    width="100%"
+                    borderColor="#D11243"
+                    focusBorderColor="#D11243"
+                  >
+                    {allowedUnits.map((unit) => (
+                      <option key={unit} value={unit}>
+                        {unitConversionService.getUnitLabel(unit)}
+                      </option>
+                    ))}
+                  </Select>
+                </Box>
+              )}
+
               <Box>
                 <Flex justifyContent={"space-between"}>
                   <Text
@@ -163,7 +310,7 @@ import {
                     fontWeight={700}
                     fontSize={"30px"}
                   >
-                    ₹{currentProduct.price}
+                    ₹{displayPrice}
                   </Text>
                   <Button
                     fontSize= {"11px"}
@@ -177,8 +324,10 @@ import {
                     height= {"36px"}
                     width= {"100px"}
                     onClick={addToCartFunction}
+                    isLoading={addingToCart}
+                    _hover={{ backgroundColor: "#b00d38" }}
                   >
-                    Add to cart
+                    {addingToCart ? "Adding..." : "Add to cart"}
                   </Button>
                 </Flex>
               </Box>
@@ -191,7 +340,7 @@ import {
                     justifyContent={"left"}
                   >
                     <div className="picess_class22">
-                      <Image className="piecess_image111" src="https://www.licious.in/img/rebranding/express_delivery.svg" alte="delivery_image11" />
+                      <Image className="piecess_image111" src="https://www.licious.in/img/rebranding/express_delivery.svg" alt="delivery_image11" />
                     <Text>Today in 90 min</Text>
                   </div>
                   </Stack>

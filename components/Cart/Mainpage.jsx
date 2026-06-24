@@ -9,6 +9,7 @@ import { Flex, Box, Text, Spinner, Center } from "@chakra-ui/react";
 import { useCart } from "../Context/CartContext";
 import { useSiteData } from "../Context/SiteDataContext";
 import { clearStoredCart, getCartTotal, readCartSnapshot, writeStoredCart } from "../../utils/cartStorage";
+import { getCartLineTotal, getCartUnitPrice } from "../../utils/productUnits";
 
 const MainPage = ({ isOpen }) => {
   const [data, setData] = useState([]);
@@ -134,11 +135,11 @@ const MainPage = ({ isOpen }) => {
         data.map((item) => {
           const p = productIndex.get(item.product_id);
           const label = p?.name || item.product?.name || `Product ${item.product_id}`;
-          const price = (item.line_total ?? p?.price ?? item.price ?? 0);
-          const image = item.product?.primary_image_url || p?.primary_image_url || p?.primary_image;
+          const price = getCartLineTotal(item, productIndex);
+          const image = item.product?.primary_image_url || p?.primary_image_url || "/images/logo/logo.webp";
           const unit = item.quantity_unit || "unit";
-          const unitPrice = item.unit_price || p?.price || 0;
-          const totalPrice = item.total_price || item.line_total || price;
+          const unitPrice = getCartUnitPrice(item, productIndex);
+          const totalPrice = getCartLineTotal(item, productIndex);
           return (
             <Item
               key={item.id}

@@ -21,7 +21,7 @@ const CartSection = ({
         {cartItems.map((item) => {
           const product = productIndex.get(item.product_id);
           const label = product?.name || item.product?.name || `Product ${item.product_id}`;
-          const image = item.product?.primary_image_url || product?.primary_image_url || product?.primary_image;
+          const image = item.product?.primary_image_url || product?.primary_image_url || '/images/logo/logo.webp';
           const unit = item.quantity_unit || 'unit';
           const totalPrice =
             item.total_price || item.line_total || parseFloat(item.price || 0) * parseFloat(item.quantity || 1);

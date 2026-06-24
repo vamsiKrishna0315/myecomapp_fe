@@ -42,6 +42,7 @@ import { addProductToCart } from "../../redux/ProductReducer/action";
 import React from "react";
 import { AppContext } from "../Context/ContextProvider";
 import { useCart } from "../Context/CartContext";
+import { getAllowedUnits, getDisplayPrice, getInitialUnit, getUnitText } from "../../utils/productUnits";
 
 const LOCATION_LATITUDE_KEY = "session-latitude";
 const LOCATION_LONGITUDE_KEY = "session-longitude";
@@ -197,6 +198,7 @@ const HomePage = ({ initialSiteData = null }) => {
 
   useEffect(() => {
     console.log("All products count:", allCategoryProducts.length);
+    console.log("All products list:", allCategoryProducts);
   }, [allCategoryProducts]);
 
   // Extract why us items
@@ -693,7 +695,7 @@ const HomePage = ({ initialSiteData = null }) => {
       return;
     }
     const qty = Number(quantities[p.id] ?? 1);
-    const unit = quantityUnits[p.id] ?? "gram";
+    const unit = quantityUnits[p.id] ?? getInitialUnit(p);
     if (!qty || qty <= 0) {
       toast({
         title: "Enter quantity",
@@ -705,12 +707,18 @@ const HomePage = ({ initialSiteData = null }) => {
       });
       return;
     }
+    const pricePerUnit = parseFloat(getDisplayPrice(p, unit) || 0);
+    const total = parseFloat((pricePerUnit * qty) || 0);
+
     const payload = {
       customer_id: Number(customerId),
       product_id: p.id,
       product_cut_id: selectedCutId ?? null,
       quantity: qty,
       quantity_unit: unit,
+      unit: unit,
+      price_per_unit: pricePerUnit,
+      total: total,
     };
     dispatch(addProductToCart(payload))
       .then(() => {
@@ -748,6 +756,10 @@ const HomePage = ({ initialSiteData = null }) => {
         });
       });
   };
+
+  const getSelectedUnitForProduct = (product) => quantityUnits[product.id] ?? getInitialUnit(product);
+
+  const getDisplayPriceForProduct = (product) => getDisplayPrice(product, getSelectedUnitForProduct(product));
 
   useEffect(() => {
     if (typeof window === "undefined") return undefined;
@@ -1125,7 +1137,9 @@ const HomePage = ({ initialSiteData = null }) => {
                       {p.name}
                     </Text>
                   </Link>
-                  {p.price && <Text color="gray.700" fontWeight="bold" mb={3}>₹{p.price}</Text>}
+                  <Text color="gray.700" fontWeight="bold" mb={3}>
+                    Rs.{parseFloat(getDisplayPriceForProduct(p) || 0).toFixed(2)} / {getUnitText(getSelectedUnitForProduct(p))}
+                  </Text>
                   
                   <Box className="product-card-actions" display="flex" flexDirection="column" gap={2}>
                     <Select
@@ -1152,14 +1166,13 @@ const HomePage = ({ initialSiteData = null }) => {
                       />
                       <Select
                         size="sm"
-                        value={quantityUnits[p.id] ?? "gram"}
+                        value={getSelectedUnitForProduct(p)}
                         onChange={(e) => setQuantityUnits((prev) => ({ ...prev, [p.id]: e.target.value }))}
                         flex={1}
                       >
-                        <option value="gram">gram</option>
-                        <option value="kg">kg</option>
-                        <option value="piece">piece</option>
-                        <option value="pack">pack</option>
+                        {getAllowedUnits(p).map((unit) => (
+                          <option key={unit} value={unit}>{unit}</option>
+                        ))}
                       </Select>
                     </Box>
                     
@@ -1227,7 +1240,9 @@ const HomePage = ({ initialSiteData = null }) => {
                       {p.name}
                     </Text>
                   </Link>
-                  {p.price && <Text color="gray.700" fontWeight="bold" mb={3}>â‚¹{p.price}</Text>}
+                  <Text color="gray.700" fontWeight="bold" mb={3}>
+                    Rs.{parseFloat(getDisplayPriceForProduct(p) || 0).toFixed(2)} / {getUnitText(getSelectedUnitForProduct(p))}
+                  </Text>
 
                   <Box className="product-card-actions" display="flex" flexDirection="column" gap={2}>
                     <Select
@@ -1254,14 +1269,13 @@ const HomePage = ({ initialSiteData = null }) => {
                       />
                       <Select
                         size="sm"
-                        value={quantityUnits[p.id] ?? "gram"}
+                        value={getSelectedUnitForProduct(p)}
                         onChange={(e) => setQuantityUnits((prev) => ({ ...prev, [p.id]: e.target.value }))}
                         flex={1}
                       >
-                        <option value="gram">gram</option>
-                        <option value="kg">kg</option>
-                        <option value="piece">piece</option>
-                        <option value="pack">pack</option>
+                        {getAllowedUnits(p).map((unit) => (
+                          <option key={unit} value={unit}>{unit}</option>
+                        ))}
                       </Select>
                     </Box>
 

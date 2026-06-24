@@ -39,7 +39,7 @@ export default function OrdersPage() {
   const cancelRef = useRef();
   const router = useRouter();
   const toast = useToast();
-  const { siteData, assetUrl } = useSiteData();
+  const { siteData } = useSiteData();
 
   const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_BASE_URL || "";
   const API_TYPE = process.env.NEXT_PUBLIC_API_TYPE || "customer";
@@ -280,7 +280,7 @@ export default function OrdersPage() {
                       const imageSrc =
                         item.product?.primary_image_url ||
                         product?.primary_image_url ||
-                        (product?.primary_image ? assetUrl(product.primary_image) : "");
+                        "/images/logo/logo.webp";
 
                       return (
                         <Box key={idx}>
