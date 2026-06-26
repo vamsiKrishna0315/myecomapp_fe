@@ -341,6 +341,77 @@ export function getCategorySlug(category) {
   return slugifySegment(category.category_type || category.category_name || "");
 }
 
+export function isComboCategory(category) {
+  if (!category || typeof category !== "object") {
+    return false;
+  }
+
+  return getCategorySlug(category) === "combo" || slugifySegment(category.category_type) === "combo";
+}
+
+export function buildCategoryRoutePath(category, combo = null) {
+  const routeSlug = getCategorySlug(category);
+
+  if (!routeSlug) {
+    return "/category";
+  }
+
+  const routePath = `/category/${routeSlug}`;
+
+  if (!combo) {
+    return routePath;
+  }
+
+  const params = new URLSearchParams();
+
+  if (combo.id != null) {
+    params.set("comboId", String(combo.id));
+  }
+
+  if (isNonEmptyString(combo.name)) {
+    params.set("comboName", combo.name);
+  }
+
+  if (Array.isArray(combo.product_ids) && combo.product_ids.length > 0) {
+    params.set("productIds", combo.product_ids.join(","));
+  }
+
+  const query = params.toString();
+  return query ? `${routePath}?${query}` : routePath;
+}
+
+export function buildCategoryNavigationItems(categories) {
+  if (!Array.isArray(categories)) {
+    return [];
+  }
+
+  return categories.flatMap((category) => {
+    if (!isComboCategory(category)) {
+      return [
+        {
+          key: `category-${category.id ?? getCategorySlug(category)}`,
+          category,
+          combo: null,
+          name: category?.category_name || "",
+          image: category?.category_image_url || category?.category_image || "",
+          href: buildCategoryRoutePath(category),
+        },
+      ];
+    }
+
+    const combos = Array.isArray(category?.combos) ? category.combos : [];
+
+    return combos.map((combo, index) => ({
+      key: `combo-${category.id ?? getCategorySlug(category)}-${combo?.id ?? index}`,
+      category,
+      combo,
+      name: combo?.name || `Combo ${index + 1}`,
+      image: category?.category_image_url || category?.category_image || "",
+      href: buildCategoryRoutePath(category, combo),
+    }));
+  });
+}
+
 export function getProductSlug(product) {
   if (!product || typeof product !== "object") {
     return "";

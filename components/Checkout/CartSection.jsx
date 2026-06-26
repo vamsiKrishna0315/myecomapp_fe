@@ -2,6 +2,7 @@
 
 import React from 'react';
 import styles from './CheckoutPage.module.css';
+import { isComboCartItem } from '../../utils/cartStorage';
 
 const formatPrice = (value) => `Rs ${parseFloat(value || 0).toFixed(2)}`;
 
@@ -25,6 +26,7 @@ const CartSection = ({
           const unit = item.quantity_unit || 'unit';
           const totalPrice =
             item.total_price || item.line_total || parseFloat(item.price || 0) * parseFloat(item.quantity || 1);
+          const comboItem = isComboCartItem(item);
 
           return (
             <article key={item.id} className={styles.cartItem}>
@@ -40,9 +42,11 @@ const CartSection = ({
                   <span className={styles.price}>{formatPrice(totalPrice)}</span>
                 </div>
               </div>
-              <button type="button" className={styles.ghostButton} onClick={() => onRemoveItem(item.id)}>
-                Remove
-              </button>
+              {comboItem ? null : (
+                <button type="button" className={styles.ghostButton} onClick={() => onRemoveItem(item.id)}>
+                  Remove
+                </button>
+              )}
             </article>
           );
         })}

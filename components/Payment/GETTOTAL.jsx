@@ -37,19 +37,6 @@ const Sum = () => {
     if (!Array.isArray(data)) return 0;
     return data.reduce((acc, c) => acc + (parseFloat(c.total_price || c.line_total || c.price || 0)), 0);
   };
-
-  const hendalqty = async (id, amount) => {
- 
-    const base = process.env.NEXT_PUBLIC_BACKEND_BASE_URL || "";
-    const apiType = process.env.NEXT_PUBLIC_API_TYPE || "customer";
-    const sep = base.endsWith("/") ? "" : "/";
-    const url = `${base}${sep}api/v1/${apiType}/cart/${id}`;
-    const token = (typeof window !== 'undefined') ? localStorage.getItem('Token') : null;
-    let data = await axios.get(url, token ? { headers: { Authorization: `Bearer ${token}` } } : undefined);
-
-    await axios.patch(url,{quantity:data.quantity+amount}, token ? { headers: { Authorization: `Bearer ${token}` } } : undefined)
-  };
-
   return (
     <div >
       <Total total={totalsum(data)} />

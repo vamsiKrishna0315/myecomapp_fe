@@ -5,8 +5,14 @@ import api from "../../utils/api";
 import { AddIcon, MinusIcon, DeleteIcon } from "@chakra-ui/icons";
 import { readStoredCart, writeStoredCart } from "../../utils/cartStorage";
 
-const Item = ({ label, price, qyt, hendalqty, id, image, unit, unitPrice, totalPrice, onItemRemoved }) => {
+const Item = ({ label, price, qyt, hendalqty, id, image, unit, unitPrice, totalPrice, onItemRemoved, isComboItem = false }) => {
   const toast = useToast();
+  const parsedQuantity = parseFloat(qyt || 0);
+
+  const handleQuantityChange = (amount) => {
+    if (isComboItem) return;
+    hendalqty(id, amount);
+  };
 
   const removeItem = async () => {
     try {
@@ -82,43 +88,56 @@ const Item = ({ label, price, qyt, hendalqty, id, image, unit, unitPrice, totalP
 
         {/* Quantity Controls */}
         <Flex align="center" gap={2} flexDir="column">
-          <Flex align="center" gap={2}>
-            <IconButton
-              icon={<MinusIcon />}
-              size="sm"
-              colorScheme="red"
-              variant="outline"
-              onClick={() => hendalqty(id, -1)}
-              aria-label="Decrease quantity"
-              isDisabled={parseFloat(qyt) <= 0.001}
-            />
-            <Box textAlign="center" minW="50px">
+          {isComboItem ? (
+            <Box textAlign="center" minW="70px">
               <Text fontSize="sm" fontWeight="600">
-                {parseFloat(qyt).toFixed(3)}
+                {parsedQuantity.toFixed(3)}
               </Text>
               <Text fontSize="xs" color="gray.500">
                 {unit || "unit"}
               </Text>
             </Box>
-            <IconButton
-              icon={<AddIcon />}
-              size="sm"
-              colorScheme="red"
-              variant="outline"
-              onClick={() => hendalqty(id, 1)}
-              aria-label="Increase quantity"
-            />
-          </Flex>
-          {/* Remove Button */}
-          <IconButton
-            icon={<DeleteIcon />}
-            size="sm"
-            colorScheme="red"
-            variant="solid"
-            onClick={removeItem}
-            aria-label="Remove item"
-            mt={1}
-          />
+          ) : (
+            <>
+              <Flex align="center" gap={2}>
+                <IconButton
+                  icon={<MinusIcon />}
+                  size="sm"
+                  colorScheme="red"
+                  variant="outline"
+                  onClick={() => handleQuantityChange(-1)}
+                  aria-label="Decrease quantity"
+                  isDisabled={isComboItem || parsedQuantity <= 0.001}
+                />
+                <Box textAlign="center" minW="50px">
+                  <Text fontSize="sm" fontWeight="600">
+                    {parsedQuantity.toFixed(3)}
+                  </Text>
+                  <Text fontSize="xs" color="gray.500">
+                    {unit || "unit"}
+                  </Text>
+                </Box>
+                <IconButton
+                  icon={<AddIcon />}
+                  size="sm"
+                  colorScheme="red"
+                  variant="outline"
+                  onClick={() => handleQuantityChange(1)}
+                  aria-label="Increase quantity"
+                  isDisabled={isComboItem}
+                />
+              </Flex>
+              <IconButton
+                icon={<DeleteIcon />}
+                size="sm"
+                colorScheme="red"
+                variant="solid"
+                onClick={removeItem}
+                aria-label="Remove item"
+                mt={1}
+              />
+            </>
+          )}
         </Flex>
       </Flex>
     </Box>

@@ -8,7 +8,7 @@ import api from "../../utils/api";
 import { Flex, Box, Text, Spinner, Center } from "@chakra-ui/react";
 import { useCart } from "../Context/CartContext";
 import { useSiteData } from "../Context/SiteDataContext";
-import { clearStoredCart, getCartTotal, readCartSnapshot, writeStoredCart } from "../../utils/cartStorage";
+import { clearStoredCart, getCartTotal, isComboCartItem, readCartSnapshot, writeStoredCart } from "../../utils/cartStorage";
 import { getCartLineTotal, getCartUnitPrice } from "../../utils/productUnits";
 
 const MainPage = ({ isOpen }) => {
@@ -99,6 +99,7 @@ const MainPage = ({ isOpen }) => {
   const hendalqty = async (id, amount) => {
     const item = data.find((d) => d.id === id);
     if (!item) return;
+    if (isComboCartItem(item)) return;
     const newQty = Math.max(1, Number(item.quantity || 1) + amount);
     const base = process.env.NEXT_PUBLIC_BACKEND_BASE_URL || "";
     const apiType = process.env.NEXT_PUBLIC_API_TYPE || "customer";
@@ -140,6 +141,7 @@ const MainPage = ({ isOpen }) => {
           const unit = item.quantity_unit || "unit";
           const unitPrice = getCartUnitPrice(item, productIndex);
           const totalPrice = getCartLineTotal(item, productIndex);
+          const comboItem = isComboCartItem(item);
           return (
             <Item
               key={item.id}
@@ -153,6 +155,7 @@ const MainPage = ({ isOpen }) => {
               unitPrice={unitPrice}
               totalPrice={totalPrice}
               onItemRemoved={handleItemRemoved}
+              isComboItem={comboItem}
             />
           );
         })

@@ -36,7 +36,7 @@ import { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import "./HomePage.css";
 import { useSiteData } from "../Context/SiteDataContext";
-import { buildProductRoutePath, getCategorySlug } from "../../utils/seo";
+import { buildCategoryNavigationItems, buildProductRoutePath } from "../../utils/seo";
 import { useDispatch } from "react-redux";
 import { addProductToCart } from "../../redux/ProductReducer/action";
 import React from "react";
@@ -205,6 +205,11 @@ const HomePage = ({ initialSiteData = null }) => {
   const whyUsData = useMemo(() => {
     const items = siteData?.why_us || [];
     return items.filter((item) => (item?.show_live ?? 1) && (item?.status ?? 1));
+  }, [siteData]);
+
+  const categoryNavigationItems = useMemo(() => {
+    const categories = (siteData?.categories || []).filter((category) => (category?.is_live ?? 1) && (category?.status ?? 1));
+    return buildCategoryNavigationItems(categories);
   }, [siteData]);
 
   // Get active flash banners
@@ -1013,16 +1018,19 @@ const HomePage = ({ initialSiteData = null }) => {
         <Center>
           <Box className="shop_categories_data">
             <UnorderedList className="cateogoires_titles">
-              {(siteData?.categories || []).filter((c) => (c?.is_live ?? 1) && (c?.status ?? 1)).map((cat) => (
-                <ListItem key={cat.id}>
-                  <Link href={`/category/${getCategorySlug(cat)}`}>
+              {categoryNavigationItems.map((item) => (
+                <ListItem key={item.key}>
+                  <Link href={item.href}>
                     <Box className="list_data" cursor="pointer">
                       <Box className="list_img_categories">
                         <figure>
-                          <Image src={cat.category_image_url || assetUrl(cat.category_image)} alt={cat.category_name} />
+                          <Image
+                            src={item.image && /^https?:\/\//i.test(item.image) ? item.image : assetUrl(item.image)}
+                            alt={item.name}
+                          />
                         </figure>
                       </Box>
-                      <Text className="text">{cat.category_name}</Text>
+                      <Text className="text">{item.name}</Text>
                     </Box>
                   </Link>
                 </ListItem>

@@ -31,6 +31,7 @@ import MenuComponent from "../menucomponent/MenuComponent";
 import { useSiteData } from "../Context/SiteDataContext";
 import { useCart } from "../Context/CartContext";
 import { clearAuthStorage } from "../../utils/auth";
+import { buildCategoryNavigationItems } from "../../utils/seo";
 
 const Navbar = () => {
   const router = useRouter();
@@ -109,7 +110,10 @@ const Navbar = () => {
     ctx?.setIsModalVisible(true);
     quickLoginDrawer.onOpen();
   };
-  const { siteData, loading } = useSiteData();
+  const { siteData, loading, assetUrl } = useSiteData();
+  const categoryNavigationItems = buildCategoryNavigationItems(
+    (siteData?.categories || []).filter((category) => (category?.is_live ?? 1) && (category?.status ?? 1))
+  );
 
   return (
     <>
@@ -227,23 +231,20 @@ const Navbar = () => {
                           ))}
                         </Box>
                       ) : (
-                        siteData?.categories
-                          ?.filter((c) => (c?.is_live ?? 1) && (c?.status ?? 1))
-                          ?.map((cat) => {
-                            const slug = (cat.category_type || cat.category_name).toLowerCase().replace(/\s+/g, "-");
+                        categoryNavigationItems.map((item) => {
                             return (
-                              <Link key={cat.id} href={`/category/${slug}`}>
+                              <Link key={item.key} href={item.href}>
                                 <Box className="scroll_data" display="flex" alignItems="center" padding="10px" cursor="pointer" _hover={{ bg: "#f4f5ff" }}>
                                   <Image
                                     height={"36px"}
                                     width="36px"
                                     marginRight="14px"
-                                    src={cat.category_image_url || "/images/logo/logo.webp"}
-                                    alt={cat.category_name}
+                                    src={item.image && /^https?:\/\//i.test(item.image) ? item.image : assetUrl(item.image) || "/images/logo/logo.webp"}
+                                    alt={item.name}
                                     fallbackSrc="/images/logo/logo.webp"
                                   />
                                   <Box color="#4b4f54" fontWeight={"500"} lineHeight="19px" fontSize={"16px"}>
-                                    {cat.category_name}
+                                    {item.name}
                                   </Box>
                                 </Box>
                               </Link>

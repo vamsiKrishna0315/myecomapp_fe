@@ -21,7 +21,7 @@ import axios from 'axios';
 import { useSiteData } from '../Context/SiteDataContext';
 import CheckoutPage from '../Checkout/CheckoutPage';
 import api from '../../utils/api';
-import { clearStoredCart, readStoredCart, writeStoredCart } from '../../utils/cartStorage';
+import { clearStoredCart, isComboCartItem, readStoredCart, writeStoredCart } from '../../utils/cartStorage';
 import { getCartLineTotal, getCartUnitPrice, resolveCartProduct } from '../../utils/productUnits';
 
 const TIME_SLOTS = [
@@ -488,6 +488,11 @@ const NewCheckout = () => {
   }, []);
 
   const removeItem = async (id) => {
+    const item = cartItems.find((entry) => entry.id === id);
+    if (item && isComboCartItem(item)) {
+      return;
+    }
+
     try {
       const apiType = process.env.NEXT_PUBLIC_API_TYPE || 'customer';
       await api.delete(`/api/v1/${apiType}/cart/${id}`);
