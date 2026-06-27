@@ -1046,6 +1046,14 @@ const NewCheckout = () => {
           },
         };
 
+      
+      
+ console.log("========== Razorpay Debug ==========");
+console.log("Key:", process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID);
+console.log("Order:", razorpayOrder);
+console.log("Options:", options);
+console.log("====================================");
+
         const razorpay = new window.Razorpay(options);
         razorpay.open();
         return;
@@ -1059,9 +1067,13 @@ const NewCheckout = () => {
         isClosable: true,
       });
     } catch (error) {
+      const errorMessage = error.response?.data?.errors
+        ? Object.values(error.response.data.errors).flat()[0]
+        : error.response?.data?.message || error.message;
+
       toast({
-        title: 'Order failed',
-        description: error.response?.data?.message || error.message,
+        title: 'Order Creation failed',
+        description: errorMessage,
         status: 'error',
         duration: 3000,
         isClosable: true,
