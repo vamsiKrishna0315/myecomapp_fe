@@ -172,6 +172,47 @@ export default function OrdersPage() {
     return statusColors[statusCode?.toLowerCase()] || "gray";
   };
 
+  const getPaymentTypeLabel = (order) => {
+    const paymentType = order.payment_method || order.payment_type || order.provider;
+
+    if (!paymentType) return "N/A";
+
+    const normalizedType = String(paymentType).toLowerCase();
+
+    if (normalizedType === "cod") return "Cash on Delivery";
+    if (normalizedType === "razorpay") return "Razorpay";
+
+    return String(paymentType)
+      .replace(/[_-]/g, " ")
+      .replace(/\b\w/g, (char) => char.toUpperCase());
+  };
+
+  const getPaymentStatusLabel = (paymentStatus) => {
+    if (typeof paymentStatus === "boolean") {
+      return paymentStatus ? "Paid" : "Pending";
+    }
+
+    if (!paymentStatus) return "Pending";
+
+    return String(paymentStatus)
+      .replace(/[_-]/g, " ")
+      .replace(/\b\w/g, (char) => char.toUpperCase());
+  };
+
+  const getPaymentStatusColor = (paymentStatus) => {
+    if (typeof paymentStatus === "boolean") {
+      return paymentStatus ? "green" : "orange";
+    }
+
+    const normalizedStatus = String(paymentStatus || "").toLowerCase();
+
+    if (["paid", "captured", "success", "completed"].includes(normalizedStatus)) return "green";
+    if (["failed", "cancelled", "refunded"].includes(normalizedStatus)) return "red";
+    if (["pending", "initiated", "processing"].includes(normalizedStatus)) return "orange";
+
+    return "gray";
+  };
+
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleDateString("en-IN", {
@@ -230,7 +271,7 @@ export default function OrdersPage() {
                 transition="all 0.2s"
               >
                 <Box bg="#f7fafc" p={4} borderBottom="1px solid #e2e8f0">
-                  <Grid templateColumns={{ base: "1fr", md: "repeat(4, 1fr)" }} gap={4}>
+                  <Grid templateColumns={{ base: "1fr", md: "repeat(6, 1fr)" }} gap={4}>
                     <Box>
                       <Text fontSize="xs" color="gray.600" mb={1}>
                         ORDER NUMBER
@@ -268,6 +309,29 @@ export default function OrdersPage() {
                         textTransform="capitalize"
                       >
                         {order.current_status?.name || "Pending"}
+                      </Badge>
+                    </Box>
+                    <Box>
+                      <Text fontSize="xs" color="gray.600" mb={1}>
+                        PAYMENT TYPE
+                      </Text>
+                      <Text fontWeight="600" fontSize="sm">
+                        {getPaymentTypeLabel(order)}
+                      </Text>
+                    </Box>
+                    <Box>
+                      <Text fontSize="xs" color="gray.600" mb={1}>
+                        PAYMENT STATUS
+                      </Text>
+                      <Badge
+                        colorScheme={getPaymentStatusColor(order.payment_status)}
+                        fontSize="xs"
+                        px={3}
+                        py={1}
+                        borderRadius="full"
+                        textTransform="capitalize"
+                      >
+                        {getPaymentStatusLabel(order.payment_status)}
                       </Badge>
                     </Box>
                   </Grid>
