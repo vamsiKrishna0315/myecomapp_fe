@@ -932,7 +932,7 @@ const NewCheckout = () => {
     };
 
     try {
-      if (method === 'Cash on Delivery') {
+      if (method === 'cod') {
         const response = await api.post(`/api/v1/${apiType}/order`, orderPayload);
 
         if (cartItems.length > 0) {
@@ -946,7 +946,7 @@ const NewCheckout = () => {
         return;
       }
 
-      if (method === 'Razorpay') {
+      if (method === 'razorpay') {
         const razorpayOrderResponse = await axios.post('/api/create-razorpay-order', {
           amount: total,
           currency: 'INR',
@@ -1031,7 +1031,6 @@ const NewCheckout = () => {
       
       
  console.log("========== Razorpay Debug ==========");
-console.log("Key:", process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID);
 console.log("Order:", razorpayOrder);
 console.log("Options:", options);
 console.log("====================================");
