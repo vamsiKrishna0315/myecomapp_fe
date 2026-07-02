@@ -64,28 +64,7 @@ function getAutoSelectedTimeSlot(slots, now = new Date()) {
   return slots[slots.length - 1] || '';
 }
 
-const PAYMENT_OPTIONS = [
-  {
-    value: 'Cash on Delivery',
-    title: 'Cash on Delivery',
-    description: 'Pay when your order reaches your doorstep.',
-  },
-  {
-    value: 'Wallet',
-    title: 'Wallet',
-    description: 'Use your wallet balance for instant checkout.',
-  },
-  {
-    value: 'Razorpay',
-    title: 'Razorpay',
-    description: 'Cards, netbanking and secure online payments.',
-  },
-  {
-    value: 'PhonePe UPI',
-    title: 'PhonePe UPI',
-    description: 'Complete the payment through your preferred UPI app.',
-  },
-];
+
 
 const EMPTY_ADDRESS_FORM = {
   address: '',
@@ -164,6 +143,9 @@ const NewCheckout = () => {
   const router = useRouter();
   const toast = useToast();
   const { siteData } = useSiteData();
+  const PAYMENT_OPTIONS = siteData?.payment_options ?? [];
+
+  console.log(PAYMENT_OPTIONS);
 
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(true);
