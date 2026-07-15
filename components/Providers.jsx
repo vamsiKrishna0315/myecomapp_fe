@@ -8,6 +8,7 @@ import { ContextProvider } from "./Context/ContextProvider";
 import AppContextProvider from "./Context/AppContext";
 import { SiteDataProvider } from "./Context/SiteDataContext";
 import { CartProvider } from "./Context/CartContext";
+import ReferralCapture from "./Referral/ReferralCapture";
 
 export default function Providers({ children, initialSiteData = null }) {
   return (
@@ -16,7 +17,10 @@ export default function Providers({ children, initialSiteData = null }) {
         <ContextProvider>
           <ChakraProvider theme={theme}>
             <SiteDataProvider initialSiteData={initialSiteData}>
-              <CartProvider>{children}</CartProvider>
+              <CartProvider>
+                <ReferralCapture />
+                {children}
+              </CartProvider>
             </SiteDataProvider>
           </ChakraProvider>
         </ContextProvider>

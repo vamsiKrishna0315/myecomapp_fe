@@ -301,6 +301,9 @@ const Navbar = () => {
                             <MenuItem onClick={() => router.push("/profile")}>
                               Profile
                             </MenuItem>
+                            <MenuItem onClick={() => router.push("/referral")}>
+                              Refer & Earn
+                            </MenuItem>
                             <MenuItem onClick={() => router.push("/raise-query")}>
                               Raise a Query
                             </MenuItem>

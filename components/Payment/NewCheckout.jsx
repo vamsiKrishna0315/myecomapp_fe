@@ -23,6 +23,7 @@ import CheckoutPage from '../Checkout/CheckoutPage';
 import api from '../../utils/api';
 import { clearStoredCart, isComboCartItem, readStoredCart, writeStoredCart } from '../../utils/cartStorage';
 import { getCartLineTotal, getCartUnitPrice, resolveCartProduct } from '../../utils/productUnits';
+import { clearStoredReferralCode, getStoredReferralCode } from '../../utils/referral';
 
 const TIME_SLOTS = [
   '10:00 AM - 12:00 PM',
@@ -415,6 +416,15 @@ const NewCheckout = () => {
   }, []);
 
   useEffect(() => {
+    if (!hasMounted || couponCode) return;
+
+    const storedReferralCode = getStoredReferralCode();
+    if (storedReferralCode) {
+      setCouponCode(storedReferralCode);
+    }
+  }, [hasMounted, couponCode]);
+
+  useEffect(() => {
     setSelectedTimeSlot(getAutoSelectedTimeSlot(TIME_SLOTS));
   }, []);
 
@@ -509,12 +519,14 @@ const NewCheckout = () => {
         const { discount: couponDiscount } = res.data.data;
         let discountAmount = 0;
 
-        if (parseInt(couponDiscount.type, 10) === 1) {
+        if (parseInt(couponDiscount.type, 10) === 0) {
+          // Percentage
           discountAmount = Math.min(
             (subtotal * parseFloat(couponDiscount.value)) / 100,
             parseFloat(couponDiscount.max_discount) || Infinity
           );
-        } else if (parseInt(couponDiscount.type, 10) === 2) {
+        } else if (parseInt(couponDiscount.type, 10) === 1) {
+          // Fixed amount
           discountAmount = Math.min(
             parseFloat(couponDiscount.value),
             parseFloat(couponDiscount.max_discount) || parseFloat(couponDiscount.value)
@@ -850,6 +862,7 @@ const NewCheckout = () => {
   const clearCheckoutState = () => {
     setCartItems([]);
     clearStoredCart();
+    clearStoredReferralCode();
     setDiscount(0);
     setCouponCode('');
     setSpecialInstructions('');
@@ -970,6 +983,60 @@ const NewCheckout = () => {
           throw new Error('Invalid order response');
         }
 
+        let hasSettled = false;
+
+        const cancelUnpaidOrder = async () => {
+          try {
+            await api.put(`/api/v1/${apiType}/order/${orderData.uuid}/cancel`, {});
+          } catch (cancelError) {
+            console.error('[Checkout][NewCheckout] failed to cancel unpaid order', cancelError);
+          }
+        };
+
+        const handlePaymentNotCompleted = async (title, description) => {
+          if (hasSettled) return;
+          hasSettled = true;
+
+          await cancelUnpaidOrder();
+
+          toast({
+            position: 'top',
+            duration: null,
+            isClosable: true,
+            render: ({ onClose }) => (
+              <Box color="white" p={4} bg="orange.500" borderRadius="md" boxShadow="lg">
+                <Text fontWeight="bold">{title}</Text>
+                <Text fontSize="sm" mt={1}>
+                  {description}
+                </Text>
+                <Box mt={3} display="flex" gap={2}>
+                  <Button
+                    size="sm"
+                    colorScheme="whiteAlpha"
+                    onClick={() => {
+                      onClose();
+                      handlePayment('razorpay');
+                    }}
+                  >
+                    Retry Payment
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    colorScheme="whiteAlpha"
+                    onClick={() => {
+                      onClose();
+                      handlePayment('cod');
+                    }}
+                  >
+                    Switch to COD
+                  </Button>
+                </Box>
+              </Box>
+            ),
+          });
+        };
+
         const options = {
           key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
           amount: razorpayOrder.amount,
@@ -978,6 +1045,7 @@ const NewCheckout = () => {
           description: 'Order Payment',
           order_id: razorpayOrder.id,
           handler: async function (paymentResponse) {
+            hasSettled = true;
             try {
               await api.post(`/api/v1/${apiType}/payment/verify`, {
                 razorpay_order_id: paymentResponse.razorpay_order_id,
@@ -1017,25 +1085,22 @@ const NewCheckout = () => {
           },
           modal: {
             ondismiss: function () {
-              toast({
-                title: 'Payment cancelled',
-                description: 'You cancelled the payment process.',
-                status: 'warning',
-                duration: 3000,
-                isClosable: true,
-              });
+              handlePaymentNotCompleted(
+                'Payment cancelled',
+                'You cancelled the payment, so the order was not placed. You can retry payment or switch to Cash on Delivery.'
+              );
             },
           },
         };
 
-      
-      
- console.log("========== Razorpay Debug ==========");
-console.log("Order:", razorpayOrder);
-console.log("Options:", options);
-console.log("====================================");
-
         const razorpay = new window.Razorpay(options);
+        razorpay.on('payment.failed', function (paymentFailedResponse) {
+          handlePaymentNotCompleted(
+            'Payment failed',
+            paymentFailedResponse?.error?.description ||
+              'Your payment could not be processed. You can retry payment or switch to Cash on Delivery.'
+          );
+        });
         razorpay.open();
         return;
       }
