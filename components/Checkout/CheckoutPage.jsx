@@ -6,12 +6,12 @@ import AddressSection from './AddressSection';
 import SpecialInstructionsSection from './SpecialInstructionsSection';
 import RightPanel from './RightPanel';
 import DeliveryBanner from './DeliveryBanner';
-import styles from './CheckoutPage.module.css';
 
 const CheckoutPage = ({
   cartItems,
   productIndex,
   onRemoveItem,
+  onUpdateQuantity,
   timeSlots,
   selectedTimeSlot,
   onTimeSlotSelect,
@@ -41,23 +41,34 @@ const CheckoutPage = ({
   showDeliveryBanner,
 }) => {
   return (
-    <div className={styles.page}>
-      <DeliveryBanner deliveryTime={deliveryTime} loading={isDeliveryTimeLoading} visible={showDeliveryBanner} />
-      <div className={styles.layout}>
-        <div className={styles.leftColumn}>
+    <div className="w-full space-y-6">
+      {/* Express Delivery Banner */}
+      <DeliveryBanner
+        deliveryTime={deliveryTime}
+        loading={isDeliveryTimeLoading}
+        visible={showDeliveryBanner}
+      />
+
+      {/* Checkout Main Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
+        {/* Left Column: Cart, Instructions, Address */}
+        <div className="lg:col-span-7 xl:col-span-8 space-y-6">
           <CartSection
             cartItems={cartItems}
             productIndex={productIndex}
             onRemoveItem={onRemoveItem}
+            onUpdateQuantity={onUpdateQuantity}
             timeSlots={timeSlots}
             selectedTimeSlot={selectedTimeSlot}
             onTimeSlotSelect={onTimeSlotSelect}
             lockTimeSlots={showDeliveryBanner}
           />
+
           <SpecialInstructionsSection
             value={specialInstructions}
             onChange={onSpecialInstructionsChange}
           />
+
           <AddressSection
             savedAddresses={savedAddresses}
             selectedAddressId={selectedAddressId}
@@ -71,7 +82,9 @@ const CheckoutPage = ({
             currentLocationLabel={currentLocationLabel}
           />
         </div>
-        <div className={styles.rightColumn}>
+
+        {/* Right Column: Order Summary & Payment (Sticky on Desktop) */}
+        <div className="lg:col-span-5 xl:col-span-4 lg:sticky lg:top-24">
           <RightPanel
             summary={summary}
             couponCode={couponCode}

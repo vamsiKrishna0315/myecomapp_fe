@@ -1,4 +1,4 @@
-import HomePage from '../components/LandingPage/HomePage';
+import HomePage from '../components/home/HomePage';
 import { getRequiredSiteData, getSiteData } from '../utils/siteData';
 import { buildHomepageMetadata, resolveHomepageSeo } from '../utils/seo';
 

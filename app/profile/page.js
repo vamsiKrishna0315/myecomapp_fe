@@ -190,7 +190,7 @@ export default function ProfilePage() {
     : "?";
 
   return (
-    <Box bg="white" minH="100vh" py={8}>
+    <Box bg="white" minH="100vh" pt={{ base: "110px", sm: "120px", lg: "96px" }} pb={12}>
       <Container maxW="600px">
         {/* Profile Header */}
         <VStack spacing={8} align="stretch">

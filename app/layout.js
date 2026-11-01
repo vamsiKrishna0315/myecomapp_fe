@@ -1,6 +1,6 @@
 import Providers from "../components/Providers";
-import Navbar from "../components/Navbar/Navbar";
-import Footer from "../components/Footer/Footer";
+import Navbar from "../components/layout/Navbar";
+import Footer from "../components/layout/Footer";
 import ErrorState from "../components/ErrorState/ErrorState";
 import { getRequiredSiteData, getSiteData } from "../utils/siteData";
 import { buildRootMetadata } from "../utils/seo";
@@ -35,8 +35,13 @@ export default async function RootLayout({ children }) {
   }
 
   return (
-    <html lang="en">
-      <body>
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <link rel="icon" href="/images/logo/logo.webp" type="image/webp" />
+        <link rel="shortcut icon" href="/images/logo/logo.webp" type="image/webp" />
+        <link rel="apple-touch-icon" href="/logo192.png" />
+      </head>
+      <body suppressHydrationWarning>
         <Providers initialSiteData={initialSiteData}>
           <Navbar />
           {children}

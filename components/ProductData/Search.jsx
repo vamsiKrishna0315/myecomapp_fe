@@ -2,10 +2,9 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
-import { Input, Box, Text, Image, Spinner, VStack } from "@chakra-ui/react";
 import { useRouter } from "next/navigation";
+import { HiOutlineSearch, HiX } from "react-icons/hi";
 import { buildProductRoutePath } from "../../utils/seo";
-import "./Search.css";
 
 const Search = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -45,26 +44,23 @@ const Search = () => {
       try {
         const sep = BASE_URL.endsWith("/") ? "" : "/";
         const url = `${BASE_URL}${sep}api/v1/${API_TYPE}/category`;
-        
+
         const res = await axios.post(url, {
-          category_name: searchQuery
+          category_name: searchQuery,
         });
 
-        if (res.data.success && res.data.data) {
+        if (res.data?.success && res.data?.data) {
           let products = [];
-          
-          // Handle array or single object response
           const categoryData = Array.isArray(res.data.data) ? res.data.data : [res.data.data];
-          
+
           categoryData.forEach((category) => {
             if (category.products && Array.isArray(category.products)) {
               products = [...products, ...category.products];
             }
           });
 
-          // Filter products by search query
           const filteredProducts = products.filter((product) =>
-            product.name.toLowerCase().includes(searchQuery.toLowerCase())
+            product.name?.toLowerCase().includes(searchQuery.toLowerCase())
           );
 
           setSearchResults(filteredProducts.slice(0, 8));
@@ -93,84 +89,81 @@ const Search = () => {
   };
 
   return (
-    <Box w="100%" h="100%" position="relative" ref={searchRef}>
-      <Input
-        w="100%"
-        className="search_input"
-        placeholder="Search for any delicious product"
-        type="search"
-        value={searchQuery}
-        onChange={(e) => setSearchQuery(e.target.value)}
-        onFocus={() => searchQuery && setShowResults(true)}
-        bg="white"
-        borderRadius="md"
-        _focus={{ borderColor: "#D11243", boxShadow: "0 0 0 1px #D11243" }}
-      />
+    <div className="w-full relative" ref={searchRef}>
+      <div className="relative flex items-center">
+        <HiOutlineSearch className="absolute left-3.5 w-4 h-4 text-gray-400 pointer-events-none" />
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          onFocus={() => searchQuery && setShowResults(true)}
+          placeholder="Search for fresh chicken, mutton, fish & cuts..."
+          className="w-full h-11 pl-10 pr-9 text-xs sm:text-sm font-medium text-gray-800 placeholder-gray-400 bg-gray-50/90 hover:bg-white focus:bg-white border border-gray-200/90 focus:border-brand rounded-xl shadow-xs focus:ring-2 focus:ring-brand/10 transition-all outline-none"
+        />
+        {searchQuery && (
+          <button
+            type="button"
+            onClick={() => {
+              setSearchQuery("");
+              setSearchResults([]);
+              setShowResults(false);
+            }}
+            className="absolute right-3 p-0.5 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+            aria-label="Clear search"
+          >
+            <HiX className="w-4 h-4" />
+          </button>
+        )}
+      </div>
 
       {showResults && (
-        <Box
-          position="absolute"
-          top="calc(100% + 8px)"
-          left="0"
-          right="0"
-          bg="white"
-          boxShadow="0 4px 12px rgba(0,0,0,0.15)"
-          borderRadius="md"
-          maxH="400px"
-          overflowY="auto"
-          zIndex="1000"
-          border="1px solid #e2e8f0"
-        >
+        <div className="absolute top-[calc(100%+8px)] left-0 right-0 bg-white rounded-2xl shadow-premium-hover border border-gray-100 max-h-96 overflow-y-auto z-50 p-2 divide-y divide-gray-50">
           {loading ? (
-            <Box p={4} textAlign="center">
-              <Spinner size="md" color="#D11243" />
-              <Text mt={2} fontSize="sm" color="gray.600">Searching...</Text>
-            </Box>
+            <div className="py-8 text-center text-gray-400">
+              <div className="w-6 h-6 border-2 border-brand border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+              <p className="text-xs font-medium">Searching fresh cuts...</p>
+            </div>
           ) : searchResults.length > 0 ? (
-            <VStack spacing={0} align="stretch">
-              {searchResults.map((product) => (
-                <Box
-                  key={product.id}
-                  p={3}
-                  display="flex"
-                  alignItems="center"
-                  gap={3}
-                  cursor="pointer"
-                  _hover={{ bg: "#f7fafc" }}
-                  borderBottom="1px solid #e2e8f0"
-                  onClick={() => handleProductClick(product)}
-                >
-                  <Image
-                    src={product.primary_image_url || "/images/logo/logo.webp"}
-                    alt={product.name}
-                    boxSize="50px"
-                    objectFit="cover"
-                    borderRadius="md"
-                    fallbackSrc="/images/logo/logo.webp"
-                  />
-                  <Box flex="1">
-                    <Text fontWeight="600" fontSize="14px" color="#2d3748" noOfLines={1}>
-                      {product.name}
-                    </Text>
-                    {product.price && (
-                      <Text fontSize="13px" color="#D11243" fontWeight="bold">
-                        ₹{product.price}
-                      </Text>
-                    )}
-                  </Box>
-                </Box>
-              ))}
-            </VStack>
+            searchResults.map((product) => (
+              <div
+                key={product.id}
+                onClick={() => handleProductClick(product)}
+                className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-red-50/40 cursor-pointer transition-colors group"
+              >
+                <img
+                  src={product.primary_image_url || "/images/logo/logo.webp"}
+                  alt={product.name}
+                  className="w-12 h-12 rounded-lg object-cover bg-gray-50 border border-gray-100 group-hover:scale-105 transition-transform"
+                  onError={(e) => {
+                    e.currentTarget.src = "/images/logo/logo.webp";
+                  }}
+                />
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs sm:text-sm font-bold text-gray-800 group-hover:text-brand transition-colors truncate">
+                    {product.name}
+                  </p>
+                  {product.price && (
+                    <p className="text-xs font-black text-brand mt-0.5">
+                      ₹{parseFloat(product.price).toFixed(2)}
+                    </p>
+                  )}
+                </div>
+                <span className="text-xs font-semibold text-gray-400 group-hover:text-brand group-hover:translate-x-0.5 transition-all">
+                  →
+                </span>
+              </div>
+            ))
           ) : searchQuery ? (
-            <Box p={4} textAlign="center">
-              <Text fontSize="sm" color="gray.600">
-                {`No products found for "${searchQuery}"`}
-              </Text>
-            </Box>
+            <div className="py-8 text-center text-gray-500">
+              <p className="text-sm font-bold text-gray-700">No matching cuts found</p>
+              <p className="text-xs text-gray-400 mt-1">
+                Try searching for &quot;Chicken&quot;, &quot;Mutton&quot;, or &quot;Fish&quot;
+              </p>
+            </div>
           ) : null}
-        </Box>
+        </div>
       )}
-    </Box>
+    </div>
   );
 };
 

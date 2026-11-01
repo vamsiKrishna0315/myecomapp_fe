@@ -1,6 +1,8 @@
-import { redirect } from 'next/navigation';
+import NewCheckout from '../../components/Payment/NewCheckout';
 
-export default function CheckoutPage({ searchParams }) {
-  const query = new URLSearchParams(searchParams).toString();
-  redirect(query ? `/new-checkout?${query}` : '/new-checkout');
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
+export default function CheckoutPage() {
+  return <NewCheckout />;
 }
