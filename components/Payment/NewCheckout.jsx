@@ -19,6 +19,7 @@ import {
 import { CheckCircleIcon } from '@chakra-ui/icons';
 import axios from 'axios';
 import { useSiteData } from '../Context/SiteDataContext';
+import { useCart } from '../Context/CartContext';
 import CheckoutPage from '../Checkout/CheckoutPage';
 import api from '../../utils/api';
 import { clearStoredCart, isComboCartItem, readStoredCart, writeStoredCart } from '../../utils/cartStorage';
@@ -144,12 +145,13 @@ const NewCheckout = () => {
   const router = useRouter();
   const toast = useToast();
   const { siteData } = useSiteData();
+  const { refreshCart } = useCart();
   const PAYMENT_OPTIONS = siteData?.payment_options ?? [];
 
   console.log(PAYMENT_OPTIONS);
 
   const [cartItems, setCartItems] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [hasMounted, setHasMounted] = useState(false);
   const [couponCode, setCouponCode] = useState('');
   const [discount, setDiscount] = useState(0);
@@ -381,6 +383,9 @@ const NewCheckout = () => {
   };
 
   const fetchCartFromAPI = useCallback(async () => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('Token') : null;
+    if (!token) return;
+
     try {
       const apiType = process.env.NEXT_PUBLIC_API_TYPE || 'customer';
       const res = await api.get(`/api/v1/${apiType}/cart`);
@@ -398,18 +403,11 @@ const NewCheckout = () => {
       setCartItems(items);
       writeStoredCart(items);
     } catch (error) {
-      console.error('Error fetching cart from API:', error);
-      toast({
-        title: 'Error loading cart',
-        description: 'Could not load cart data.',
-        status: 'error',
-        duration: 3000,
-        isClosable: true,
-      });
+      console.warn('Error fetching cart from API:', error);
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  }, []);
 
   useEffect(() => {
     setHasMounted(true);
@@ -456,16 +454,26 @@ const NewCheckout = () => {
     }
   }, [selectedBillingAddress, useBillingAsDelivery]);
 
-  useEffect(() => {
+  const syncCartFromStorage = useCallback(() => {
     const storedCart = readStoredCart();
-    if (storedCart.length > 0) {
-      setCartItems(storedCart);
-      setLoading(false);
-      return;
-    }
+    setCartItems(storedCart);
+    setLoading(false);
+  }, []);
 
+  useEffect(() => {
+    // 1. Instant load from local storage
+    syncCartFromStorage();
+    // 2. Authoritative sync from backend API
     fetchCartFromAPI();
-  }, [fetchCartFromAPI]);
+
+    window.addEventListener('cartStorageUpdated', syncCartFromStorage);
+    window.addEventListener('storage', syncCartFromStorage);
+
+    return () => {
+      window.removeEventListener('cartStorageUpdated', syncCartFromStorage);
+      window.removeEventListener('storage', syncCartFromStorage);
+    };
+  }, [fetchCartFromAPI, syncCartFromStorage]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -480,31 +488,79 @@ const NewCheckout = () => {
   }, []);
 
   const removeItem = async (id) => {
-    const item = cartItems.find((entry) => entry.id === id);
+    const item = cartItems.find((entry) => String(entry.id) === String(id));
     if (item && isComboCartItem(item)) {
       return;
     }
 
+    // Optimistic removal: 0ms instant UI update
+    const updatedItems = cartItems.filter((entry) => String(entry.id) !== String(id));
+    setCartItems(updatedItems);
+    writeStoredCart(updatedItems);
+    refreshCart();
+
+    toast({
+      title: 'Item removed',
+      status: 'success',
+      duration: 2000,
+      isClosable: true,
+    });
+
     try {
       const apiType = process.env.NEXT_PUBLIC_API_TYPE || 'customer';
       await api.delete(`/api/v1/${apiType}/cart/${id}`);
-      const updatedItems = cartItems.filter((item) => item.id !== id);
-      setCartItems(updatedItems);
-      writeStoredCart(updatedItems);
-      toast({
-        title: 'Item removed',
-        status: 'success',
-        duration: 2000,
-        isClosable: true,
+    } catch (error) {
+      console.warn('Error removing item from server:', error);
+      fetchCartFromAPI();
+    }
+  };
+
+  const updateQuantity = async (id, amount) => {
+    const item = cartItems.find((entry) => String(entry.id) === String(id));
+    if (!item || isComboCartItem(item)) return;
+
+    const currentQty = parseFloat(item.quantity || 1);
+    if (amount < 0 && currentQty <= 1) return;
+    const newQty = Math.max(1, currentQty + amount);
+    if (newQty === currentQty) return;
+
+    const unitPrice = getCartUnitPrice(item, productIndex) || parseFloat(item.unit_price || item.price || 0);
+    const lineTotal = unitPrice * newQty;
+
+    // Optimistic local update
+    const updatedItems = cartItems.map((entry) => {
+      if (String(entry.id) === String(id)) {
+        return {
+          ...entry,
+          quantity: newQty,
+          unit_price: unitPrice,
+          total_price: lineTotal,
+          line_total: lineTotal,
+        };
+      }
+      return entry;
+    });
+
+    setCartItems(updatedItems);
+    writeStoredCart(updatedItems);
+
+    try {
+      const apiType = process.env.NEXT_PUBLIC_API_TYPE || 'customer';
+      await api.patch(`/api/v1/${apiType}/cart/${id}`, {
+        quantity: newQty,
+        quantity_unit: item.quantity_unit || 'kg',
       });
+      refreshCart();
     } catch (error) {
       toast({
-        title: 'Error removing item',
+        title: 'Error updating quantity',
         description: error.response?.data?.message || error.message,
         status: 'error',
         duration: 3000,
         isClosable: true,
       });
+      // Revert to server state on error
+      fetchCartFromAPI();
     }
   };
 
@@ -862,6 +918,7 @@ const NewCheckout = () => {
   const clearCheckoutState = () => {
     setCartItems([]);
     clearStoredCart();
+    refreshCart();
     clearStoredReferralCode();
     setDiscount(0);
     setCouponCode('');
@@ -1127,35 +1184,31 @@ const NewCheckout = () => {
     }
   };
 
-  if (!hasMounted || loading) {
+  if (!hasMounted && cartItems.length === 0) {
     return (
-      <Center h="50vh">
-        <Spinner size="xl" />
-      </Center>
+      <Box minH="100vh" pt={{ base: 6, lg: 8 }} bg="#f8fafc">
+        <Center h="50vh">
+          <Spinner size="xl" color="brand" thickness="4px" />
+        </Center>
+      </Box>
     );
   }
 
   return (
     <Box bg="white">
-      <Box bg="white" minH="calc(100vh - 150px)" py={{ base: 6, md: 10 }}>
-      <Box maxW="1320px" mx="auto" px={{ base: 4, md: 6 }}>
-        <VStack align="stretch" spacing={2} mb={{ base: 6, md: 8 }}>
-          <Text
-            fontSize="sm"
-            fontWeight="700"
-            letterSpacing="0.08em"
-            textTransform="uppercase"
-            color="#d11243"
-          >
-            Checkout
-          </Text>
-          <Heading size="lg" color="gray.800">
-            Review your order and complete payment
-          </Heading>
-          <Text color="gray.600">
-            Confirm your cart, delivery address, and payment method before placing the order.
-          </Text>
-        </VStack>
+      <Box bg="#f8fafc" minH="100vh" pt={{ base: 4, sm: 6, lg: 8 }} pb={{ base: 12, sm: 16 }}>
+      <Box maxW="1600px" mx="auto" px={{ base: 4, sm: 6, lg: 12 }}>
+        <div className="mb-4 sm:mb-6">
+          <span className="text-[11px] font-black uppercase tracking-wider text-brand block mb-1">
+            Secure Checkout
+          </span>
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-gray-900 tracking-tight">
+            Review your order & complete payment
+          </h1>
+          <p className="text-xs sm:text-sm text-gray-500 mt-1">
+            Confirm your items, delivery address, and payment method before placing your order.
+          </p>
+        </div>
         {orderSuccess ? (
           <VStack spacing={8} textAlign="center" py={12}>
             <CheckCircleIcon w={16} h={16} color="green.500" />
@@ -1185,6 +1238,7 @@ const NewCheckout = () => {
             cartItems={cartItems}
             productIndex={productIndex}
             onRemoveItem={removeItem}
+            onUpdateQuantity={updateQuantity}
             timeSlots={TIME_SLOTS}
             selectedTimeSlot={selectedTimeSlot}
             onTimeSlotSelect={setSelectedTimeSlot}
@@ -1223,122 +1277,113 @@ const NewCheckout = () => {
       </Box>
 
       <Modal isOpen={isAddressFormOpen} onClose={closeAddressEditor} isCentered size="lg">
-        <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(6px)" />
-        <ModalContent borderRadius="20px" overflow="hidden">
+        <ModalOverlay bg="blackAlpha.400" backdropFilter="blur(8px)" />
+        <ModalContent borderRadius="24px" overflow="hidden" boxShadow="2xl">
           <ModalBody p={0}>
-            <div style={{ padding: '24px' }}>
-              <div style={{ marginBottom: '20px' }}>
-                <Heading size="md">{addressEditor.mode === 'edit' ? 'Edit Address' : 'Add Address'}</Heading>
-                <Text color="gray.500" mt={2}>
-                  Keep your delivery details updated for faster checkout.
+            <div className="p-6 sm:p-7 space-y-5 bg-white">
+              <div className="border-b border-gray-100 pb-4">
+                <Heading size="md" className="!font-black text-gray-900 tracking-tight">
+                  {addressEditor.mode === 'edit' ? 'Edit Address' : 'Add New Address'}
+                </Heading>
+                <Text fontSize="sm" color="gray.500" mt={1}>
+                  Keep your delivery details updated for fresh and timely deliveries.
                 </Text>
               </div>
 
-              <div style={{ display: 'grid', gap: '14px' }}>
-                <label>
-                  <Text fontSize="sm" mb={2}>
-                    Address
-                  </Text>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1.5">
+                    Full Address / Street Details *
+                  </label>
                   <textarea
                     value={addressEditor.data.address}
                     onChange={(event) => handleAddressFormChange('address', event.target.value)}
-                    rows={4}
-                    style={{
-                      width: '100%',
-                      border: '1px solid #e2e8f0',
-                      borderRadius: '12px',
-                      padding: '12px 14px',
-                      resize: 'vertical',
-                    }}
+                    rows={3}
+                    placeholder="House / Flat No., Apartment / Building Name, Street..."
+                    className="w-full px-3.5 py-2.5 text-xs sm:text-sm text-gray-900 placeholder-gray-400 bg-gray-50/70 hover:bg-white focus:bg-white border border-gray-200/90 focus:border-brand focus:ring-2 focus:ring-brand/10 rounded-xl outline-none transition-all resize-y"
                   />
-                </label>
-
-                <div style={{ display: 'grid', gap: '14px', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' }}>
-                  <label>
-                    <Text fontSize="sm" mb={2}>
-                      City
-                    </Text>
-                    <input
-                      value={addressEditor.data.city}
-                      onChange={(event) => handleAddressFormChange('city', event.target.value)}
-                      style={{
-                        width: '100%',
-                        border: '1px solid #e2e8f0',
-                        borderRadius: '12px',
-                        padding: '12px 14px',
-                      }}
-                    />
-                  </label>
-                  <label>
-                    <Text fontSize="sm" mb={2}>
-                      State
-                    </Text>
-                    <input
-                      value={addressEditor.data.state}
-                      onChange={(event) => handleAddressFormChange('state', event.target.value)}
-                      style={{
-                        width: '100%',
-                        border: '1px solid #e2e8f0',
-                        borderRadius: '12px',
-                        padding: '12px 14px',
-                      }}
-                    />
-                  </label>
                 </div>
 
-                <div style={{ display: 'grid', gap: '14px', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' }}>
-                  <label>
-                    <Text fontSize="sm" mb={2}>
-                      Pincode
-                    </Text>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 mb-1.5">City *</label>
                     <input
+                      type="text"
+                      value={addressEditor.data.city}
+                      onChange={(event) => handleAddressFormChange('city', event.target.value)}
+                      placeholder="e.g. Hyderabad"
+                      className="w-full px-3.5 py-2.5 text-xs sm:text-sm text-gray-900 placeholder-gray-400 bg-gray-50/70 hover:bg-white focus:bg-white border border-gray-200/90 focus:border-brand focus:ring-2 focus:ring-brand/10 rounded-xl outline-none transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 mb-1.5">State *</label>
+                    <input
+                      type="text"
+                      value={addressEditor.data.state}
+                      onChange={(event) => handleAddressFormChange('state', event.target.value)}
+                      placeholder="e.g. Telangana"
+                      className="w-full px-3.5 py-2.5 text-xs sm:text-sm text-gray-900 placeholder-gray-400 bg-gray-50/70 hover:bg-white focus:bg-white border border-gray-200/90 focus:border-brand focus:ring-2 focus:ring-brand/10 rounded-xl outline-none transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 mb-1.5">Pincode *</label>
+                    <input
+                      type="text"
                       value={addressEditor.data.pincode}
                       onChange={(event) => handleAddressFormChange('pincode', event.target.value)}
-                      style={{
-                        width: '100%',
-                        border: '1px solid #e2e8f0',
-                        borderRadius: '12px',
-                        padding: '12px 14px',
-                      }}
+                      placeholder="e.g. 500081"
+                      className="w-full px-3.5 py-2.5 text-xs sm:text-sm text-gray-900 placeholder-gray-400 bg-gray-50/70 hover:bg-white focus:bg-white border border-gray-200/90 focus:border-brand focus:ring-2 focus:ring-brand/10 rounded-xl outline-none transition-all"
                     />
-                  </label>
-                  <label>
-                    <Text fontSize="sm" mb={2}>
-                      Address Type
-                    </Text>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 mb-1.5">Address Type</label>
                     <select
                       value={addressEditor.data.address_type}
                       onChange={(event) => handleAddressFormChange('address_type', parseInt(event.target.value, 10))}
-                      style={{
-                        width: '100%',
-                        border: '1px solid #e2e8f0',
-                        borderRadius: '12px',
-                        padding: '12px 14px',
-                        background: '#fff',
-                      }}
+                      className="w-full px-3.5 py-2.5 text-xs sm:text-sm text-gray-900 bg-gray-50/70 hover:bg-white focus:bg-white border border-gray-200/90 focus:border-brand focus:ring-2 focus:ring-brand/10 rounded-xl outline-none transition-all"
                     >
                       <option value={1}>Home</option>
                       <option value={2}>Work</option>
                       <option value={3}>Other</option>
                     </select>
-                  </label>
+                  </div>
                 </div>
 
-                <label style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#475569' }}>
+                <label className="flex items-center gap-2.5 text-xs font-medium text-gray-700 cursor-pointer pt-1">
                   <input
                     type="checkbox"
                     checked={addressEditor.data.is_default}
                     onChange={(event) => handleAddressFormChange('is_default', event.target.checked)}
+                    className="w-4 h-4 text-brand rounded border-gray-300 focus:ring-brand cursor-pointer"
                   />
-                  Set as default address
+                  <span>Set as default delivery address</span>
                 </label>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>
-                <Button variant="outline" onClick={closeAddressEditor}>
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
+                <Button
+                  variant="outline"
+                  onClick={closeAddressEditor}
+                  borderRadius="xl"
+                  fontSize="sm"
+                  fontWeight="bold"
+                >
                   Cancel
                 </Button>
-                <Button colorScheme="red" onClick={saveAddress} isLoading={savingAddress}>
+                <Button
+                  colorScheme="red"
+                  bg="#D11243"
+                  _hover={{ bg: '#b00f38' }}
+                  onClick={saveAddress}
+                  isLoading={savingAddress}
+                  borderRadius="xl"
+                  fontSize="sm"
+                  fontWeight="black"
+                  shadow="sm"
+                >
                   {addressEditor.mode === 'edit' ? 'Save Changes' : 'Save Address'}
                 </Button>
               </div>

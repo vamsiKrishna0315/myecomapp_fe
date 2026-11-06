@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { ChakraProvider } from "@chakra-ui/react";
 import { Provider } from "react-redux";
 import { store } from "../redux/store";
@@ -11,6 +12,12 @@ import { CartProvider } from "./Context/CartContext";
 import ReferralCapture from "./Referral/ReferralCapture";
 
 export default function Providers({ children, initialSiteData = null }) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   return (
     <Provider store={store}>
       <AppContextProvider>
@@ -19,7 +26,10 @@ export default function Providers({ children, initialSiteData = null }) {
             <SiteDataProvider initialSiteData={initialSiteData}>
               <CartProvider>
                 <ReferralCapture />
-                {children}
+                {/* Suppress hydration warnings caused by browser extensions (Grammarly, Translate, etc.) */}
+                <div suppressHydrationWarning>
+                  {mounted ? children : <div style={{ visibility: "hidden" }}>{children}</div>}
+                </div>
               </CartProvider>
             </SiteDataProvider>
           </ChakraProvider>

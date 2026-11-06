@@ -1,5 +1,5 @@
 const DEFAULT_SITE_URL = "http://localhost:3000";
-const DEFAULT_SITE_NAME = "Yumeat";
+const DEFAULT_SITE_NAME = "YUMEAT Store";
 const DEFAULT_DESCRIPTION =
   "Order fresh, hygienically processed meat, poultry, and seafood online with reliable doorstep delivery.";
 
@@ -97,7 +97,11 @@ function stripHtml(value) {
 }
 
 function getStoreName(siteData) {
-  return siteData?.store_data?.name || DEFAULT_SITE_NAME;
+  const name = siteData?.store_data?.name;
+  if (!isNonEmptyString(name) || /^yu\s*meat/i.test(name.trim())) {
+    return DEFAULT_SITE_NAME;
+  }
+  return name.trim();
 }
 
 export function resolveSiteUrl(siteData) {
@@ -242,8 +246,8 @@ export function buildRootMetadata(siteData) {
     },
     description: defaultDescription,
     icons: {
-      icon: favicon,
-      shortcut: favicon,
+      icon: [ { url: "/images/logo/logo.webp", type: "image/webp" }, { url: "/favicon.png", type: "image/png" }, { url: "/favicon.ico", sizes: "any" } ],
+      shortcut: "/images/logo/logo.webp",
       apple: buildAssetUrl(siteData?.store_data?.logo_url, siteUrl) || "/logo192.png",
     },
     openGraph: {
@@ -271,7 +275,8 @@ export function resolveHomepageSeo(siteData) {
   const homepageMetaTag = findHomepageMetaTag(siteData, siteUrl);
   const rootSeo = getRootSeoValues(siteData);
   const seo = homepageMetaTag?.seo || {};
-  const title = seo.title || rootSeo.defaultTitle;
+  const rawTitle = seo.title || rootSeo.defaultTitle;
+  const title = !rawTitle || /^yu\s*meat/i.test(rawTitle.trim()) ? "YUMEAT Store" : rawTitle;
   const description = seo.description || rootSeo.defaultDescription;
   const canonical = getValidatedCanonical(seo.canonical, "/", siteUrl);
   const image =

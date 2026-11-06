@@ -49,14 +49,15 @@ export function CartProvider({ children }) {
       if (!res.ok) throw new Error(`Cart fetch failed: ${res.status}`);
       const json = await res.json();
       const payload = json?.data ?? json;
+      const items = extractItems(payload);
+
       if (typeof payload?.count === "number") {
         setCartCount(Number(payload.count));
       } else {
-        const items = extractItems(payload);
         setCartCount(getCartCount(items));
       }
 
-      writeStoredCart(extractItems(payload));
+      writeStoredCart(items);
     } catch (e) {
       setError(e);
       if (e?.response?.status === 401) {
@@ -69,14 +70,34 @@ export function CartProvider({ children }) {
     }
   }, []);
 
-  useEffect(() => {
+  // Synchronize cart count immediately from local snapshot / events
+  const syncFromStorage = useCallback(() => {
     const { count } = readCartSnapshot();
-    if (count > 0) {
-      setCartCount(count);
-    }
+    setCartCount(count);
+  }, []);
 
+  useEffect(() => {
+    syncFromStorage();
     refreshCart();
-  }, [refreshCart]);
+
+    window.addEventListener("cartStorageUpdated", syncFromStorage);
+    window.addEventListener("storage", syncFromStorage);
+    window.addEventListener("userLoggedIn", refreshCart);
+    window.addEventListener("userLoggedOut", () => {
+      clearStoredCart();
+      setCartCount(0);
+    });
+
+    return () => {
+      window.removeEventListener("cartStorageUpdated", syncFromStorage);
+      window.removeEventListener("storage", syncFromStorage);
+      window.removeEventListener("userLoggedIn", refreshCart);
+      window.removeEventListener("userLoggedOut", () => {
+        clearStoredCart();
+        setCartCount(0);
+      });
+    };
+  }, [refreshCart, syncFromStorage]);
 
   const value = useMemo(() => ({ cartCount, loading, error, refreshCart }), [cartCount, loading, error, refreshCart]);
 

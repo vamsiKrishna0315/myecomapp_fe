@@ -5,16 +5,12 @@ export const metadata = {
     index: false,
     follow: false,
   },
-}
+};
 
-export default function RootLayout({
+export default function ProfileLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
-  return (
-    <html lang="en">
-      <body>{children}</body>
-    </html>
-  )
+  return children;
 }
